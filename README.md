@@ -11,7 +11,7 @@ Corto incluido: **"El invento que Kodak escondió"** (~57 s).
 |---|---|---|
 | **three.js** | Dibuja el mundo 3D | `src/motor/`, `src/historia/mundo.ts` |
 | **Remotion** | Convierte el código en un video, cuadro por cuadro | `src/Short.tsx`, `src/Root.tsx` |
-| **edge-tts** (Python) | Crea la voz y dice en qué segundo cae cada palabra | `scripts/voz.py` |
+| **edge-tts** o **ElevenLabs** (Python) | Crea la voz y dice en qué segundo cae cada palabra | `scripts/voz.py` |
 | **numpy** (Python) | Crea la música y los efectos de sonido | `scripts/musica.py` |
 
 La idea clave: **el video es una función del tiempo**. Para cada cuadro, el código pregunta
@@ -28,10 +28,16 @@ La idea clave: **el video es una función del tiempo**. Para cada cuadro, el có
 ```bash
 npm install          # una sola vez
 
-npm run voz          # 1. crea public/voz.mp3 y src/historia/tiempos.json
+npm run voz          # 1. crea public/voz.mp3 y src/historia/tiempos.json (voz gratis)
 npm run musica       # 2. crea public/musica.wav
 npm run estudio      # 3. abre el editor en el navegador para ver el video y moverte por el tiempo
 npm run video        # 4. renderiza out/video.mp4
+```
+
+Voz más natural con ElevenLabs (de pago). La clave va en una variable, **nunca dentro de un archivo**:
+
+```bash
+ELEVENLABS_API_KEY=tu_clave python3 scripts/voz.py --elevenlabs
 ```
 
 Para revisar rápido cómo se ve un momento sin renderizar todo:
