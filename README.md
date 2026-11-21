@@ -39,7 +39,7 @@ npm install          # una sola vez
 npm run voz          # 1. crea public/voz.mp3 y src/historia/tiempos.json (voz gratis)
 npm run musica       # 2. crea public/musica.wav
 npm run estudio      # 3. abre el editor en el navegador para ver el video y moverte por el tiempo
-npm run video        # 4. renderiza out/video.mp4
+npm run video:gpu    # 4. renderiza out/video.mp4 usando tu tarjeta gráfica (recomendado en tu PC)
 ```
 
 Voz más natural con ElevenLabs (de pago). La clave va en una variable, **nunca dentro de un archivo**:
@@ -54,7 +54,7 @@ Para revisar rápido cómo se ve un momento sin renderizar todo:
 node scripts/fotos.mjs 1.5,12,30     # guarda fotos de esos segundos en out/fotos/
 ```
 
-> En un servidor sin tarjeta gráfica usa `npm run video:servidor`.
+> Sin tarjeta gráfica usa `npm run video:servidor` (más lento). En Linux con GPU: agrega `--gl=angle-egl`.
 > Si Remotion no logra descargar su navegador, usa un Chrome que ya tengas:
 > `NAVEGADOR=/ruta/a/chrome npm run video`
 
