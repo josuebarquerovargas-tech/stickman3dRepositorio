@@ -369,6 +369,14 @@ export function crearMundo() {
   en(cilindro(0.1, 0.12, 0.42, 0xe2382c, 0.02, 12), 0, 0.21, 0, hidranteCerca);
   en(esfera(0.1, 0xe2382c, 0.02), 0, 0.44, 0, hidranteCerca);
   en(acostado(cilindro(0.045, 0.045, 0.3, 0xc7ccd4, 0.012, 10), "z"), 0, 0.28, 0, hidranteCerca);
+  // Objetos que los personajes llevan en la mano. Su punto de origen es donde va la mano.
+  const martillo = grupo(cosas);
+  en(cilindro(0.022, 0.022, 0.34, 0x9a6a44, 0.012, 8, { trama: "madera" }), 0, 0.15, 0, martillo);
+  en(caja(0.2, 0.1, 0.1, 0x8d99a6, 0.018, { trama: "metal" }), 0, 0.33, 0, martillo);
+  const maletin = grupo(cosas);
+  en(caja(0.46, 0.32, 0.12, 0x7a4a2a, 0.022, { trama: "madera" }), 0, -0.22, 0, maletin);
+  en(caja(0.16, 0.06, 0.04, 0x2b2b33, 0.012), 0, -0.03, 0, maletin);
+  for (const x of [-0.13, 0.13]) en(caja(0.05, 0.07, 0.13, 0xffd23f, 0.008), x, -0.1, 0, maletin);
   const primeros = { libros, rollos: rollosCerca, hojas: hojasCerca, hierba: hierbaCerca, silla: sillaCerca, carton: cartonCerca, hidrante: hidranteCerca };
 
   // ------------------------------------------------------------------ efectos 2D
@@ -395,7 +403,7 @@ export function crearMundo() {
 
   const sets = { lab, sala, fuera, calle, noche };
   const movibles: THREE.Object3D[] = [camara, chip, casete, tostadora, ...pilas, tele, archivero, candado, secreto, ...telefonos,
-    ...destellos, ...risas, ...polvos, kilos, contador.sprite, ...humos, ...monedas, ...cuernos, ...Object.values(primeros)];
+    ...destellos, ...risas, ...polvos, kilos, contador.sprite, ...humos, ...monedas, ...cuernos, ...Object.values(primeros), martillo, maletin];
 
   /** Deja todo escondido y en su estado inicial. Se llama al empezar cada cuadro. */
   const reiniciar = () => {
@@ -418,6 +426,7 @@ export function crearMundo() {
   return { look, lucesNoche, luzLab, luzSala, luzMesa, foquitos, escena, ambiente, sol, foco, boveda, cielos, sets, actores, gente, todos, reiniciar, pantalla,
     camara, camPlacas, camLente, camCuerpo, chip, casete, tostadora, panes, pilas, tele, archivero, cajon, candado, secreto, telefonos,
     letreroFabrica, cerrado, rolloGigante, corona, humos, monedas, pedestal, cuernos, pila,
-    destellos, risas, polvos, kilos, contador, primeros };
+    destellos, risas, polvos, kilos, contador, primeros, martillo, maletin };
+
 }
 export type Mundo = ReturnType<typeof crearMundo>;

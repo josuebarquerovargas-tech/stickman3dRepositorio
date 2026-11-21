@@ -76,11 +76,11 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
   const ver = (o: THREE.Object3D, x: number, y: number, z: number, escala = 1) => { o.visible = true; o.position.set(x, y, z); o.scale.setScalar(escala); return o; };
   const hablar = (p: Personaje, desde: number, hasta: number) => { if (s > desde && s < hasta) p.habla = Math.abs(Math.sin(s * 13)) * 0.9; };
   /** La cámara digital sostenida frente al cuerpo de un personaje. */
-  const sostener = (p: Personaje, alto = 0.72, adelante = 0.45) => {
+  const sostener = (p: Personaje, alto = 0.72, adelante = 0.45, cosa: THREE.Object3D = m.camara) => {
     const g = p.grupo.position;
     const dir = new THREE.Vector3(Math.sin(p.grupo.rotation.y), 0, Math.cos(p.grupo.rotation.y));
-    ver(m.camara, g.x + dir.x * adelante, alto, g.z + dir.z * adelante);
-    m.camara.rotation.y = p.grupo.rotation.y;
+    ver(cosa, g.x + dir.x * adelante, alto - p.agacha * 0.3, g.z + dir.z * adelante);   // si se agacha, la cosa baja con él
+    cosa.rotation.y = p.grupo.rotation.y;
     p.alcanzar("i", CX - 108, 752 - (alto + 0.25) * 320); p.alcanzar("d", CX + 108, 752 - (alto + 0.25) * 320);
   };
 
@@ -97,9 +97,15 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
       if (caeCam <= 0) { camara(atras, [0.3, 0.62, 2.2], [0, 0.92, 0.75], [0.85, 0.62, 3.5], [0, 1.28, 0.5]); frente(m.primeros.libros, -0.8, -1.02, 1.3, 0.9, 0.5, lerp(0.35, 1, atras)); }
       else { camara(caeCam, [0.85, 0.62, 3.5], [0, 1.28, 0.5], [0.45, 0.6, 4.7], [0, 1.02, 0.9], 40, 46); frente(m.primeros.libros, -0.8 - caeCam, -1.02 - caeCam * 0.4, 1.3, 0.9, 0.5, caeCam); }
       steve.poner(0, 0.4); steve.cara = "feliz"; steve.salto = Math.abs(Math.sin(t * 7)) * 0.05 * (1 - tramo(s, P(0, "empresa"), P(0, "escondió")));
-      sostener(steve);
       // la caja "TOP SECRETO" le cae encima
       const cae = tramo(s, P(0, "empresa") - 0.1, P(0, "escondió") + 0.12);
+      // ACCIÓN: levanta su invento para presumirlo; cuando ve venir la caja, se encoge y cierra los ojos
+      const presume = suave2(tramo(s, P(0, "cámara") - 0.25, P(0, "cámara") + 0.2)) * (1 - suave2(tramo(s, P(0, "empresa") - 0.5, P(0, "empresa") - 0.1)));
+      steve.ladea = Math.sin(t * 5) * 0.07 * presume;
+      steve.agacha = suave(cae) * 0.75;
+      sostener(steve, 0.72 + presume * 0.08);
+      if (cae > 0.05 && cae < 0.5) { steve.miraY = -0.8; steve.ceja = -1; }
+      if (cae >= 0.5) { steve.ojosCerrados = true; steve.ceja = -1; }
       if (cae > 0) {
         const y = lerp(7, 0, cae * cae) + (cae >= 1 ? Math.abs(Math.sin((s - P(0, "escondió")) * 16)) * 0.08 * Math.max(0, 1 - (s - P(0, "escondió")) * 2.5) : 0);
         ver(m.secreto, 0, y, 1.0);
@@ -118,6 +124,13 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
       else { camara(suave(tramo(t, tReina, tReina + 0.5)), [0.5, 1.6, 6.4], [0.6, 3.6, -6], [0.2, 2.6, 4.6], [1.4, 5.7, -6], 38); frente(m.primeros.hojas, -0.7, 0.72, 1.3, 1.2); }
       if (t > tSteve - 0.25) steve.poner(-0.3, z); steve.cara = "feliz"; steve.paso = z > 2.25 ? t * 10 : 0; steve.salto = z > 2.25 ? Math.abs(Math.sin(t * 10)) * 0.05 : 0;
       if (s > P(1, "24")) steve.brazo("d", 2.5 + Math.sin(t * 12) * 0.25, 0.2);       // saluda
+      // ACCIÓN: llega al trabajo cargando su maletín, que se balancea al caminar
+      if (steve.grupo.visible) {
+        steve.brazo("i", 0.2 + Math.sin(steve.paso) * 0.22, 0.05);
+        const h = steve.mano("i"); ver(m.maletin, h.x, h.y, h.z + 0.02); m.maletin.rotation.y = steve.grupo.rotation.y; m.maletin.rotation.z = -Math.sin(steve.paso) * 0.12;
+        steve.ladea = Math.sin(steve.paso) * 0.04;
+        if (s > P(1, "trabaja")) { steve.miraY = -0.7; steve.ceja = -0.5; }           // levanta la vista hacia la fábrica
+      }
       // la corona cae sobre el rollo gigante: "la reina de los rollos"
       const k = tramo(s, P(1, "reina") - 0.15, P(1, "reina") + 0.25);
       m.corona.position.y = 6.5 + (1 - rebote(k)) * 5;
@@ -140,7 +153,13 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
       ver(m.chip, pos.x, pos.y + 0.1, pos.z + 0.1); m.chip.rotation.set(0.9, t * 2, 0);
       ver(m.destellos[0], pos.x + 0.16, pos.y + 0.3, pos.z + 0.2, 0.28 + Math.abs(Math.sin(t * 6)) * 0.14);
       steve.cara = pase >= 1 ? "sorpresa" : "neutral";
-      if (s > P(2, "a")) { jefe.cara = "feliz"; jefe.brazo("i", 1.0, 1.3).brazo("d", 1.0, 1.3); hablar(jefe, P(2, "a"), L(3) - 0.15); }
+      // ACCIÓN: Steve se inclina a examinar el sensor; el jefe se lo señala con el dedo y una mano en la cintura
+      const examina = suave2(tramo(s, P(2, "nuevo"), P(2, "nuevo") + 0.5));
+      steve.ladea = -0.14 * examina; steve.agacha = 0.18 * examina; steve.ceja = -0.7 * examina; steve.miraY = 0.25 * examina;
+      if (s > P(2, "a")) {
+        jefe.cara = "feliz"; jefe.parpado = 0.5; jefe.ladea = 0.08; hablar(jefe, P(2, "a"), L(3) - 0.15);
+        jefe.alcanzar("d", CX + 196, 392 + Math.sin(s * 9) * 12); jefe.alcanzar("i", CX - 96, 470);
+      }
       break;
     }
     // 3 — "Steve arma un aparato del tamaño de una tostadora. Pesa casi 4 kilos, usa 16 pilas y guarda las fotos en un casete."
@@ -159,7 +178,14 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
       m.camCuerpo.scale.setScalar(rebote(tramo(s, tA, tA + 0.3)) || 0.001);
       m.camLente.scale.setScalar(rebote(tramo(s, tA + 0.18, tA + 0.48)) || 0.001);
       m.camPlacas.scale.setScalar(rebote(tramo(s, tA + 0.36, tA + 0.66)) || 0.001);
-      if (s < tA) { steve.alcanzar("i", CX - 120, 400 + Math.sin(s * 18) * 45); steve.alcanzar("d", CX + 20, 400 - Math.sin(s * 18) * 45); }
+      // ACCIÓN: martilla las piezas (una mano sujeta, la otra da los golpes y saltan chispas)
+      if (s < tA + 0.75) {
+        const arriba = Math.abs(Math.sin(s * 13));          // 1 = martillo arriba, 0 = golpe
+        steve.alcanzar("i", CX - 170, 418); steve.alcanzar("d", CX - 70, 418 - arriba * 62);
+        const h = steve.mano("d"); ver(m.martillo, h.x, h.y, h.z + 0.03); m.martillo.rotation.y = steve.grupo.rotation.y; m.martillo.rotation.z = 1.45 - arriba * 1.2;
+        steve.miraY = 0.7; steve.ceja = 0.6; steve.cara = "neutral"; steve.ladea = 0.05 - arriba * 0.05;
+        if (arriba < 0.25) ver(m.destellos[1], -0.3 + azar(Math.floor(s * 13 / Math.PI)) * 0.2, 1.42, -1.25, 0.5 * (1 - arriba * 4));
+      }
       else if (sube > 0.02) { steve.cara = "serio"; steve.inclina = Math.sin(s * 30) * 0.02; steve.alcanzar("i", CX - 190, 400 - sube * 150); steve.alcanzar("d", CX - 20, 400 - sube * 150); }
       // la tostadora, para comparar
       const tost = rebote(tramo(s, tT, tT + 0.3)) * (1 - suave(tramo(s, tP - 0.3, tP)));
@@ -169,6 +195,10 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
 
       // 16 pilas en fila
       m.pilas.forEach((p, i) => { const k = rebote(tramo(s, tPi + i * 0.045, tPi + i * 0.045 + 0.2)); if (k > 0) ver(p, -0.86 + i * 0.115, 1.135, -0.76, k); });
+      if (s > tPi - 0.2 && s < tC - 0.6) {                    // las va contando con el dedo, siguiéndolas con la cabeza
+        const va = tramo(s, tPi, tPi + 0.85);
+        steve.alcanzar(va < 0.5 ? "i" : "d", CX + lerp(-200, 200, va), 455); steve.mira = lerp(-1, 1, va); steve.miraY = 0.7; steve.ladea = lerp(-0.1, 0.1, va);
+      }
       // el casete vuela a su ranura
       const kc = tramo(s, tC - 0.45, tC + 0.15);
       if (s > tC - 0.6 && kc < 1) { ver(m.casete, lerp(0.95, 0.05, suave2(kc)), lerp(2.2, 1.3, kc * kc), -1.2, 1.25); m.casete.rotation.z = (1 - kc) * 3; steve.alcanzar("d", CX + 230, 300); }
@@ -189,6 +219,12 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
       ayudante.cara = aburre > 0.55 ? "triste" : aburre > 0.15 ? "serio" : "feliz";
       ayudante.brazo("d", lerp(2.7, 0.2, suave2(aburre)), 0.25); ayudante.brazo("i", lerp(1.1, 0.2, suave2(aburre)), lerp(1.4, 0.1, aburre));
       steve.cara = s < tT ? "feliz" : "neutral";
+      // ACCIÓN: Steve aprieta el botón y se agacha a vigilar el aparato; ella mira su reloj y acaba bostezando
+      if (s < tF + 0.25) steve.alcanzar("d", CX + 150, lerp(330, 392, suave(tramo(s, tF - 0.25, tF))));
+      const vigila = suave2(tramo(s, tT - 0.2, tT + 0.5));
+      steve.agacha = 0.4 * vigila; steve.ladea = 0.12 * vigila; steve.miraY = 0.5 * vigila; steve.ceja = vigila > 0.5 ? 0.5 : null;
+      if (aburre > 0.2 && aburre <= 0.62) { ayudante.alcanzar("i", CX - 52, 318); ayudante.miraY = 0.7; ayudante.mira = -0.6; ayudante.parpado = 0.5; ayudante.ladea = -0.1; }
+      if (aburre > 0.62) { ayudante.alcanzar("d", CX + 12, 266); ayudante.habla = 0.9; ayudante.ojosCerrados = true; ayudante.cara = "neutral"; ayudante.ladea = 0.16; ayudante.ceja = -0.8; }
       const fl = tramo(s, tF, tF + 0.3);
       if (fl > 0 && fl < 1) ver(m.destellos[0], p.x + 1.0, 1.2, p.z + 0.4, 2.2 * (1 - fl));
       if (s > tT) { const seg = Math.round(lerp(0, 23, tramo(s, tT, fin - 0.25))); m.contador.texto(`${seg} s`, seg >= 23 ? "#7dff9a" : "#ffffff"); ver(m.contador.sprite, 0.1, 2.5, 0.4); m.contador.sprite.scale.set(1.3, 0.65, 1); }
@@ -201,7 +237,11 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
       camara(z, [1.0 - u * 0.3, 0.7, 2.9 - u * 0.3], [-0.4, 1.25, 0.2], [-0.12, 1.22, 2.0], [-0.12, 1.2, 0.4], 42);
       if (z < 0.5) frente(m.primeros.rollos, -0.78, -1.0, 1.3, 0.7, -0.3, 0);
       ver(m.tele, 0, 0, 0); m.pantalla(tramo(t, 0.15, 1.3));
-      steve.poner(-1.05, -0.2); steve.mira = 1; steve.cara = "feliz";
+      // ACCIÓN: se asoma por un lado del televisor, señala la pantalla y luego celebra
+      const asoma = suave(tramo(t, 0.15, 0.8));
+      steve.poner(lerp(-0.55, -1.05, asoma), -0.3); steve.mira = 1; steve.cara = "feliz";
+      steve.inclina = -0.3 * (1 - asoma); steve.ladea = -0.2 * (1 - asoma); steve.agacha = 0.35 * (1 - asoma);
+      if (t > 0.8 && t <= 1.3) { steve.alcanzar("d", CX + 195, 372 + Math.sin(t * 14) * 10); steve.ceja = -0.6; }
       if (t > 1.3) { steve.brazo("i", 2.6, 0.2).brazo("d", 2.6, 0.2); steve.salto = Math.abs(Math.sin(t * 9)) * 0.12; }
       break;
     }
@@ -215,13 +255,19 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
       const jefes = [jefe2, jefe, jefe3];
       jefes.forEach((j, i) => {
         j.poner((i - 1) * 1.0, -2.1);
-        if (s > tR) { j.cara = "risa"; j.salto = Math.abs(Math.sin(s * 11 + i * 2)) * 0.07; j.inclina = Math.sin(s * 11 + i * 2) * 0.05; }
+        if (s > tR) { j.cara = "risa"; j.salto = Math.abs(Math.sin(s * 11 + i * 2)) * 0.07; j.inclina = Math.sin(s * 11 + i * 2) * 0.05; j.ladea = Math.sin(s * 11 + i * 2 + 1) * 0.13; }
       });
+      // ACCIÓN: uno golpea la mesa de la risa, otro se agarra la panza y el del centro señala a Steve
+      if (s > tR) {
+        jefe2.alcanzar("d", CX + 96, 452 - Math.abs(Math.sin(s * 9)) * 130);
+        jefe3.alcanzar("i", CX - 34, 466).alcanzar("d", CX + 34, 470); jefe3.inclina += 0.1;
+      }
       if (s > tQ) { jefe.brazo("i", 1.45, 0.15); }
       if (s < tR - 0.1 || s >= tV) {      // en el acercamiento a los jefes no se ven Steve ni la tele
         steve.poner(-0.72, 0.9); steve.mira = 0.6;
         ver(m.tele, 0.78, 0, 0.7); m.tele.rotation.y = -0.15;
-        if (s < tR) { steve.cara = "feliz"; steve.brazo("d", 1.4, 0.3); } else steve.cara = "triste";
+        if (s < tR) { steve.cara = "feliz"; steve.brazo("d", 1.4 + Math.sin(t * 9) * 0.12, 0.3); steve.salto = Math.abs(Math.sin(t * 8)) * 0.04; steve.ceja = -0.5; }
+        else { steve.cara = "triste"; const baja = suave2(tramo(s, tV, tV + 0.5)); steve.miraY = 0.8 * baja; steve.ladea = -0.12 * baja; steve.parpado = 0.4 * baja; steve.agacha = 0.12 * baja; }   // agacha la cabeza
       }
       if (s > tR && s < tV) m.risas.forEach((r, i) => { const f = ((s - tR) * 0.9 + i * 0.37) % 1; ver(r, (azar(i) - 0.5) * 2.4, 2.35 + f * 0.7, -1.5, 0.45 + f * 0.2); r.material.opacity = 1 - f * f; r.material.rotation = (azar(i + 9) - 0.5) * 0.6; });
       break;
@@ -232,9 +278,11 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
       const tL = P(7, "qué"), tN = P(7, "pero");
       luz(s > tN ? "drama" : "interior");
       camara(suave2(u), [0.5, 1.22, 1.0], [0, 1.72, -2.1], [0.2, 1.27, -0.05], [0, 1.72, -2.1], 38);
-      jefe.poner(0, -2.1);
-      if (s < tN) { jefe.cara = "feliz"; hablar(jefe, tL, tN - 0.25); jefe.brazo("i", 1.0, 1.4); }
-      else { jefe.cara = "serio"; jefe.alcanzar("d", CX + 8, lerp(420, 268, suave(tramo(s, tN, tN + 0.25)))); }
+      // ACCIÓN: aplaude con desgana; luego se echa hacia adelante sobre la mesa y pide silencio con el dedo
+      const encima = suave2(tramo(s, tN - 0.1, tN + 0.4));
+      jefe.poner(0, -2.1 + encima * 0.45);
+      if (s < tN) { jefe.cara = "feliz"; hablar(jefe, tL, tN - 0.25); const palmas = Math.abs(Math.sin(s * 10)); jefe.alcanzar("i", CX - 14 - palmas * 46, 418).alcanzar("d", CX + 14 + palmas * 46, 418); jefe.parpado = 0.45; jefe.ladea = 0.07; }
+      else { jefe.cara = "serio"; jefe.alcanzar("d", CX + 8, lerp(420, 268, suave(tramo(s, tN, tN + 0.25)))); jefe.ladea = -0.1 * encima; jefe.parpado = 0.4; jefe.mira = Math.sin((s - tN) * 5) * 0.5 * (1 - tramo(s, tN + 0.3, tN + 1.2)); }
       break;
     }
     // 8 — "Fíjate: Kodak ganaba una fortuna vendiendo rollos. Una cámara sin rollo era su peor enemigo."
@@ -244,7 +292,9 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
       if (s < tU - 0.1) {
         camara(suave(tramo(t, 0, 0.6)), [0.2, 0.7, 6.2], [0, 1.15, 0], [0.45, 0.38, 4.4 - u * 0.5], [0.05, 1.22, 0], 46);
         jefe.poner(0.85, 0.3); jefe.cara = "feliz"; jefe.mira = -0.5;
-        if (s > tG) { jefe.brazo("i", 2.6, 0.2).brazo("d", 2.6, 0.2); jefe.salto = Math.abs(Math.sin(s * 9)) * 0.1; }
+        // ACCIÓN: atrapa las monedas que caen, doblando las rodillas y estirándose a cada lado
+        if (s > tG) { const lado = Math.sin(s * 4.5); jefe.alcanzar("i", CX - 150 - lado * 40, 250 + lado * 60).alcanzar("d", CX + 150 - lado * 40, 250 - lado * 60);
+          jefe.agacha = 0.3 + 0.3 * Math.sin(s * 9); jefe.ladea = lado * 0.12; jefe.inclina = lado * 0.06; jefe.miraY = -0.8; jefe.cara = "risa"; }
         m.monedas.forEach((mo, i) => {
           const k = tramo(s, tG + i * 0.11, tG + i * 0.11 + 0.55);
           if (k <= 0) return;
@@ -256,12 +306,16 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
         frente(m.primeros.rollos, 0.78, -1.02, 1.3, 0.7, 0.8);
         m.pila.visible = false; m.pedestal.visible = true;
         ver(m.camara, -0.3, 0.8, 0.4, 1.25); m.camara.rotation.y = 0.35;
-        jefe.poner(1.0, 0.3); jefe.mira = -1; jefe.cara = "sorpresa";
         const mal = tramo(s, tE, tE + 0.3);
+        // ACCIÓN: al verla como enemigo, da un traspié hacia atrás
+        const susto = tramo(s, tE, tE + 0.5);
+        jefe.poner(1.0 + 0.32 * suave(susto), 0.3); jefe.mira = -1; jefe.cara = "sorpresa";
+        jefe.agacha = 0.4 * Math.sin(susto * Math.PI); jefe.ceja = susto > 0 ? -1 : null;
+        if (susto <= 0) { jefe.ladea = -0.1; jefe.alcanzar("i", CX - 20, 300); }       // antes, se rasca la barbilla mirándola
         m.foco.position.set(-0.3, 1.9, 1.6); m.foco.intensity = mal * 14;
         if (mal > 0) {
           m.cuernos.forEach((c, i) => ver(c, -0.3 + (i ? 0.2 : -0.2) + 0.06, 1.62, 0.4, rebote(mal)));
-          jefe.inclina = 0.12; jefe.brazo("i", 2.3, 0.4).brazo("d", 2.3, 0.4); jefe.salto = Math.abs(Math.sin(s * 22)) * 0.03;
+          jefe.inclina = 0.12 + 0.22 * Math.sin(susto * Math.PI); jefe.brazo("i", 2.3, 0.4).brazo("d", 2.3, 0.4); jefe.salto = Math.abs(Math.sin(s * 22)) * 0.03;
         }
       }
       break;
@@ -277,14 +331,21 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
       frente(m.primeros.carton, 0.85, -1.15, 1.4, 0.8, 0.4);
       ver(m.archivero, 0.45, 0, 0.3);
       m.cajon.position.z = 0.85 * (1 - cierra);
-      const cae = tramo(s, tI - 0.5, tI + 0.1);
-      if (cierra < 0.6) { ver(m.camara, 0.45, lerp(2.9, 0.82, suave2(cae)), 0.3 + m.cajon.position.z, 0.85); m.camara.rotation.y = 0.3; }
-      jefe.poner(-0.62, 0.9); jefe.mira = 1; jefe.cara = "serio";
-      jefe.alcanzar("d", CX + lerp(200, 150, cierra), 430);
+      // ACCIÓN: el jefe carga el invento hasta el cajón, se agacha para meterlo, lo cierra de un empujón y se sacude las manos
+      const cae = suave2(tramo(s, tI - 0.55, tI + 0.1));
+      jefe.poner(lerp(-1.0, -0.62, suave(tramo(t, 0, 0.5))), 0.9); jefe.mira = 1; jefe.cara = "serio";
+      jefe.agacha = 0.5 * cae * (1 - cierra); jefe.miraY = 0.6 * (1 - cierra); jefe.parpado = 0.4;
+      if (cierra < 0.6) {
+        const jx = jefe.grupo.position.x;
+        ver(m.camara, lerp(jx + 0.62, 0.45, cae), lerp(0.98, 0.82, cae), lerp(1.05, 0.3 + m.cajon.position.z, cae), 0.85); m.camara.rotation.y = 0.3;
+        if (cae < 1) { const c = m.camara.position; jefe.alcanzarMundo("d", new THREE.Vector3(c.x + 0.1, c.y + 0.22, c.z)); jefe.alcanzarMundo("i", new THREE.Vector3(c.x - 0.25, c.y + 0.12, c.z)); }
+      }
+      if (cae >= 1) jefe.alcanzar("d", CX + lerp(200, 150, cierra), 430);
       if (cierra >= 1) {
         const k = tramo(s, tC + 0.22, tC + 0.75);
         m.polvos.slice(0, 4).forEach((p, i) => { ver(p, 0.45 + (i - 1.5) * (0.5 + k * 0.5), 1.0 + (i % 2) * 0.35 + k * 0.4, 0.95, 0.5 + k * 0.6); p.material.opacity = 1 - k; });
         ver(m.candado, 0.45, 1.02, 0.92, rebote(tramo(s, tC + 0.3, tC + 0.55)) * 1.3);
+        if (s > tC + 0.45) { const sac = Math.sin(s * 16); jefe.alcanzar("i", CX - 22, 424 + sac * 24).alcanzar("d", CX + 22, 424 - sac * 24); jefe.miraY = 0; jefe.mira = 0; }
       }
       break;
     }
@@ -296,6 +357,7 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
       m.gente.forEach((p, i) => {
         p.poner(-2.1 + i * 0.84, (i % 2) * -1.0 + 0.6); p.cara = i % 3 === 1 ? "risa" : "feliz";
         p.salto = Math.abs(Math.sin(s * 8 + i)) * 0.05;
+        p.ladea = Math.sin(s * 3 + i * 1.7) * 0.11; p.miraY = -0.5; if (i % 3 === 2) p.agacha = 0.45;   // posan para la selfi: cabeza ladeada, alguno agachado
         const lado = i % 2 ? "i" : "d";
         p.alcanzar(lado, CX + (i % 2 ? -185 : 185), 240);
         const h = p.mano(lado);
@@ -320,14 +382,26 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
       if (cae >= 1) { const k = tramo(s, tB + 0.35, tB + 0.95); if (k < 1) m.polvos.forEach((p, i) => { ver(p, (i - 2) * (0.9 + k), 0.4 + k * 0.6, -3.0, 1.2 + k); p.material.opacity = 1 - k; }); }
       if (n === 11) {
         camara(suave2(u), [-3.2, 0.7, 2.9], [-0.7, 2.0, -3.9], [-2.9, 0.75, 2.3], [-0.7, 1.9, -3.9], 44);
-        frente(m.primeros.hierba, 0.6, -1.35, 1.1, 0.7); m.look.foco = 4.6; m.look.apertura = 0.3;
-        jefe.poner(-2.1, -1.0); jefe.cara = "triste"; jefe.mira = 0.7; jefe.brazo("i", 0.1, 0).brazo("d", 0.1, 0);
+        frente(m.primeros.hojas, 0.8, 0.85, 1.4, 1.1); m.look.foco = 4.6; m.look.apertura = 0.3;
+        // ACCIÓN: sale cargando una caja con sus cosas, cabizbajo; cuando el letrero se cae, da un respingo y voltea
+        jefe.poner(-2.1, -1.0); jefe.cara = "triste";
+        const respingo = tramo(s, tB, tB + 0.5);
+        jefe.salto = Math.sin(respingo * Math.PI) * 0.14 * (respingo < 1 ? 1 : 0);
+        sostener(jefe, 0.8, 0.4, m.primeros.carton);
+
+        if (respingo > 0 && respingo < 1) { jefe.cara = "sorpresa"; jefe.mira = 1; jefe.ceja = -1; }
+        else { jefe.miraY = 0.8; jefe.parpado = 0.4; jefe.ladea = -0.1; jefe.mira = respingo >= 1 ? 0.8 : 0.3; }
       } else {
         const tQ = P(12, "quebró");
         camara(suave2(u), [0.7, 0.75, 5.5], [0.05, 1.3, 3], [0.45, 0.5, 6.5], [0, 1.6, 3], 40);
         frente(m.primeros.hierba, -0.7, -1.4, 1.1, 0.7); frente(m.primeros.hojas, 0.75, 0.8, 1.4, 1.2);
-        steve.poner(0, 3); sostener(steve);
-        steve.cara = s < tQ ? "neutral" : "triste"; steve.mira = s < tQ ? -0.5 : 0;   // al final mira a la cámara
+        // ACCIÓN: mira el aparato que tiene en las manos, lo va bajando, niega con la cabeza y al final nos mira
+        steve.poner(0, 3); sostener(steve, lerp(0.78, 0.62, suave2(u)));
+        const niega = tramo(s, tQ, tQ + 0.9);
+        steve.cara = s < tQ ? "neutral" : "triste";
+        if (s < tQ) { steve.miraY = 0.9; steve.parpado = 0.35; steve.ladea = 0.08; }
+        else { steve.mira = Math.sin(niega * Math.PI * 3) * 0.7 * (1 - niega); steve.miraY = 0.5 * (1 - niega); steve.ladea = -0.06 * niega; }   // al final mira a la cámara
+
       }
       break;
     }

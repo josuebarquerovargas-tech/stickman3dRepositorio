@@ -25,6 +25,8 @@ const LINEA = "#2b1a12";
 const PIEL = "#fff8ef";
 const BRAZO = 104;      // largo de cada mitad del brazo
 const HOMBRO_Y = 372, HOMBRO_X = 68;
+const BAJADA = 96;      // cuánto baja el cuerpo (en puntos de dibujo) al agacharse del todo
+
 
 export class Personaje {
   /** La cámara de la escena. Hay que colocarla ANTES de poner a los personajes. */
@@ -43,6 +45,11 @@ export class Personaje {
   inclina = 0;         // inclinación del cuerpo
   salto = 0;           // altura extra (unidades 3D)
   ojosCerrados = false;
+  agacha = 0;          // 0 de pie, 1 en cuclillas (dobla las rodillas y baja el cuerpo)
+  ladea = 0;           // inclinación de la cabeza sola (radianes)
+  miraY = 0;           // -1 mira hacia arriba, 1 hacia abajo
+  parpado = 0;         // 0 ojos abiertos, 0.5 a media asta (aburrido, desconfiado), 1 cerrados
+  ceja: number | null = null;   // null = la que toca según la cara; -1 cejas tristes, 1 cejas enojadas
   private codo: Record<"i" | "d", Punto> = { i: [0, 0], d: [0, 0] };
   private manoP: Record<"i" | "d", Punto> = { i: [0, 0], d: [0, 0] };
 
@@ -68,7 +75,7 @@ export class Personaje {
   reiniciar() {
     this.grupo.visible = false;
     this.cara = "neutral"; this.mira = 0; this.habla = 0; this.paso = 0; this.inclina = 0; this.salto = 0;
-    this.ojosCerrados = false;
+    this.ojosCerrados = false; this.agacha = 0; this.ladea = 0; this.miraY = 0; this.parpado = 0; this.ceja = null;
     this.brazo("i", 0.18, 0.1); this.brazo("d", 0.18, 0.1);
     this.tinte(0xffffff);
   }
@@ -110,14 +117,14 @@ export class Personaje {
   /** Brazo que alcanza un punto del mundo 3D (para sostener objetos). */
   alcanzarMundo(lado: "i" | "d", p: THREE.Vector3) {
     const l = this.grupo.worldToLocal(p.clone());
-    return this.alcanzar(lado, CX + l.x * PPU, SUELO - (l.y - this.salto) * PPU);
+    return this.alcanzar(lado, CX + l.x * PPU, SUELO - (l.y - this.salto) * PPU - this.agacha * BAJADA);
   }
 
   /** Posición de la mano en el mundo 3D. */
   mano(lado: "i" | "d") {
     const [x, y] = this.manoP[lado];
     this.grupo.updateMatrixWorld();
-    return this.grupo.localToWorld(new THREE.Vector3((x - CX) / PPU, (SUELO - y) / PPU + this.salto, 0.06));
+    return this.grupo.localToWorld(new THREE.Vector3((x - CX) / PPU, (SUELO - y - this.agacha * BAJADA) / PPU + this.salto, 0.06));
   }
 
   tinte(color: THREE.ColorRepresentation) { (this.lamina.material as THREE.MeshBasicMaterial).color.set(color); }
@@ -130,7 +137,7 @@ export class Personaje {
     // parpadeo automático cada ~3 segundos
     const parpadeo = this.ojosCerrados || (cuadro + this.semilla * 37) % 95 < 4;
     const firma = JSON.stringify([this.cara, this.mira.toFixed(2), this.habla.toFixed(2), this.paso.toFixed(2),
-      this.inclina.toFixed(3), parpadeo, this.codo, this.manoP].flat(3).map((v) => (typeof v === "number" ? Math.round(v) : v)));
+      this.inclina.toFixed(3), parpadeo, this.agacha.toFixed(2), this.ladea.toFixed(2), this.miraY.toFixed(1), this.parpado.toFixed(1), this.ceja?.toFixed(1) ?? "x", this.codo, this.manoP].flat(3).map((v) => (typeof v === "number" ? Math.round(v) : v)));
     if (firma === this.ultimo) return;
     this.ultimo = firma;
     this.dibujar(parpadeo);
@@ -150,19 +157,20 @@ export class Personaje {
       g.fillStyle = gr; g.fillRect(0, 0, T, T);
     };
 
-    // piernas y zapatos
-    const zanca = Math.sin(this.paso) * 34;
+    // piernas y zapatos (al agacharse, la cadera baja y las rodillas salen hacia afuera)
+    const zanca = Math.sin(this.paso) * 34, baja = this.agacha * BAJADA;
     for (const s of [-1, 1]) {
-      const px = CX + s * 26 + s * zanca;
+      const px = CX + s * 26 + s * zanca + s * this.agacha * 14;
       const py = SUELO - 8 - Math.max(0, Math.sin(this.paso) * s) * 16;
-      g.strokeStyle = LINEA; g.lineWidth = 13; g.beginPath(); g.moveTo(CX + s * 26, 540); g.lineTo(px, py); g.stroke();
+      const cy = 540 + baja, rx = (CX + s * 26 + px) / 2 + s * this.agacha * 58, ry = (cy + py) / 2 + this.agacha * 8;
+      g.strokeStyle = LINEA; g.lineWidth = 13; g.beginPath(); g.moveTo(CX + s * 26, cy); g.lineTo(rx, ry); g.lineTo(px, py); g.stroke();
       g.lineWidth = 6; g.fillStyle = a.zapatos ?? "#4a3326";
       g.beginPath(); g.moveTo(px - 12, py - 12); g.quadraticCurveTo(px + 34, py - 16, px + 36, py + 6); g.lineTo(px - 12, py + 6); g.closePath(); g.fill(); g.stroke();
     }
 
     // lo demás se inclina junto (cuerpo, brazos y cabeza)
     g.save();
-    g.translate(CX, 545); g.rotate(this.inclina); g.translate(-CX, -545);
+    g.translate(CX, 545 + baja); g.rotate(this.inclina); g.translate(-CX, -545);
 
     // ---- cuerpo en forma de frijol, con su ropa
     const frijol = () => { g.beginPath(); g.ellipse(CX, 442, 88, 118, 0, 0, 7); };
@@ -219,6 +227,7 @@ export class Personaje {
 
     // ---- cabeza
     const hx = CX, hy = 206, R = 118, m = this.mira;
+    g.save(); g.translate(hx, hy + R); g.rotate(this.ladea); g.translate(-hx, -(hy + R));   // la cabeza se ladea desde el cuello
     const oscuro = new THREE.Color(a.colorPelo).multiplyScalar(0.5).getStyle();
     if (a.pelo === "mono") { g.lineWidth = 10; g.fillStyle = a.colorPelo; g.beginPath(); g.arc(hx, hy - R - 22, 44, 0, 7); g.fill(); g.stroke(); }
     g.lineWidth = 10; g.fillStyle = PIEL; g.beginPath(); g.arc(hx, hy, R, 0, 7); g.fill();
@@ -237,7 +246,7 @@ export class Personaje {
     g.strokeStyle = LINEA; g.lineWidth = 10; g.beginPath(); g.arc(hx, hy, R, 0, 7); g.stroke();
 
     // ---- cara
-    const fx = hx + m * 26, ey = hy - 6, sep = 42;
+    const fx = hx + m * 26, ey = hy - 6 + this.miraY * 20, sep = 42;
     const c = this.cara;
     if (c === "feliz" || c === "risa") { g.fillStyle = "rgba(255,120,130,0.38)"; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(fx + s * 74, ey + 44, 20, 12, 0, 0, 7); g.fill(); } }   // chapitas
     g.fillStyle = LINEA; g.lineWidth = 8;
@@ -250,18 +259,23 @@ export class Personaje {
       else if (c === "feliz" || c === "risa") { g.arc(x, ey + 8, 16, Math.PI * 1.1, Math.PI * 1.9); g.stroke(); }
       else {
         const rad = c === "sorpresa" ? 15 : 11;
-        g.arc(x + m * 3, ey, rad, 0, 7); g.fill();
-        g.fillStyle = "#fff"; g.beginPath(); g.arc(x + m * 3 - rad * 0.35, ey - rad * 0.35, rad * 0.33, 0, 7); g.fill(); g.fillStyle = LINEA;
+        g.arc(x + m * 3, ey + this.miraY * 3, rad, 0, 7); g.fill();
+        g.fillStyle = "#fff"; g.beginPath(); g.arc(x + m * 3 - rad * 0.35, ey + this.miraY * 3 - rad * 0.35, rad * 0.33, 0, 7); g.fill(); g.fillStyle = LINEA;
+        if (this.parpado > 0.05) {          // párpado: tapa la parte de arriba del ojo y deja una raya
+          const borde = ey - rad - 3 + (rad * 2 + 3) * Math.min(1, this.parpado);
+          g.fillStyle = a.gafas ? "#dcebf7" : PIEL; g.fillRect(x + m * 3 - rad - 4, ey - rad - 6, rad * 2 + 8, borde - (ey - rad - 6));
+          g.lineWidth = 6; g.beginPath(); g.moveTo(x + m * 3 - rad - 5, borde); g.lineTo(x + m * 3 + rad + 5, borde); g.stroke(); g.lineWidth = 8; g.fillStyle = LINEA;
+        }
       }
       // cejas
       const cy = ey - (c === "sorpresa" ? 50 : 40) - (a.gafas ? 6 : 0);
-      const giro = c === "serio" ? 11 : c === "triste" ? -11 : 0;   // serio: ceja baja por dentro
+      const giro = this.ceja !== null ? this.ceja * 14 : c === "serio" ? 11 : c === "triste" ? -11 : 0;   // serio: ceja baja por dentro
       g.lineWidth = 9; g.beginPath(); g.moveTo(x - s * 18, cy + giro); g.lineTo(x + s * 18, cy - giro); g.stroke(); g.lineWidth = 8;
     }
     if (a.gafas) { g.lineWidth = 7; g.beginPath(); g.moveTo(fx - sep + 33, ey); g.lineTo(fx + sep - 33, ey); g.stroke(); }
 
     // boca
-    const by = hy + 56;
+    const by = hy + 56 + this.miraY * 14;
     g.lineWidth = 8;
     if (a.bigote) { g.fillStyle = a.colorPelo; g.lineWidth = 5; g.beginPath(); g.ellipse(fx - 22, by - 16, 30, 14, 0.25, 0, 7); g.fill(); g.stroke(); g.beginPath(); g.ellipse(fx + 22, by - 16, 30, 14, -0.25, 0, 7); g.fill(); g.stroke(); g.fillStyle = LINEA; g.lineWidth = 8; }
     g.beginPath();
@@ -274,6 +288,7 @@ export class Personaje {
     else if (c === "feliz") { g.arc(fx, by - 10, 24, Math.PI * 0.15, Math.PI * 0.85); g.stroke(); }
     else if (c === "triste") { g.arc(fx, by + 22, 20, Math.PI * 1.15, Math.PI * 1.85); g.stroke(); }
     else { g.moveTo(fx - 13, by); g.lineTo(fx + 13, by); g.stroke(); }
+    g.restore();   // fin de la cabeza ladeada
     for (const lado of ["i", "d"] as const) if (sobreLaCara(lado)) brazo(lado);
     g.restore();
   }
