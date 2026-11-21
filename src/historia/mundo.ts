@@ -308,7 +308,141 @@ export function crearMundo() {
   const farolNoche = farol(-0.15, -1.9, noche, 3.6);
   const faroles = [farolFuera, ...farolesCalle, farolNoche];
 
+  // ------------------------------------------------------------------ RELLENO DEL MUNDO
+  // Objetos pequeños que cuentan la época y el lugar. Van en el fondo, sobre los muebles y algunos en el
+  // suelo cerca de la cámara (salen borrosos). Ninguno estorba el camino de los personajes.
+  const papel = (x: number, y: number, z: number, padre: THREE.Object3D, giro = 0, color = 0xfff8ef) => { const p = en(caja(0.26, 0.015, 0.34, color, 0.01), x, y, z, padre); p.rotation.y = giro; return p; };
+  const taza = (x: number, y: number, z: number, padre: THREE.Object3D, color = 0xfff8ef) => { en(cilindro(0.06, 0.05, 0.12, color, 0.015, 12), x, y + 0.06, z, padre); en(new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.012, 6, 10), material(color)), x + 0.07, y + 0.06, z, padre); };
+  const carrete = (x: number, y: number, z: number, padre: THREE.Object3D, r = 0.2) => { const c = en(cilindro(r, r, 0.05, 0x2b2b33, 0.018, 20), x, y, z, padre); en(cilindro(r * 0.35, r * 0.35, 0.06, 0xc7ccd4, 0.01, 12), 0, 0, 0, c); return c; };
+  const placa = (x: number, y: number, z: number, padre: THREE.Object3D, giro = 0) => {          // tarjeta de circuitos con chips
+    const g = en(new THREE.Group(), x, y, z, padre); g.rotation.y = giro;
+    g.add(caja(0.34, 0.02, 0.24, 0x2f9e5b, 0.012));
+    for (const [cx, cz, w] of [[-0.09, -0.04, 0.1], [0.07, 0.05, 0.08], [0.08, -0.06, 0.05]]) en(caja(w, 0.03, 0.05, 0x22252b, 0), cx, 0.02, cz, g);
+    en(caja(0.03, 0.04, 0.03, 0xffd23f, 0), -0.1, 0.03, 0.07, g); en(cilindro(0.018, 0.018, 0.05, 0xe2574c, 0, 8), 0, 0.03, 0.08, g);
+    return g;
+  };
+  const cajaRotulo = (texto: string, w: number, h: number, d: number, x: number, z: number, padre: THREE.Object3D, giro = 0, y = 0) => {
+    const g = en(new THREE.Group(), x, y, z, padre); g.rotation.y = giro;
+    en(caja(w, h, d, 0xc99a5b, 0.03, { trama: "carton" }), 0, h / 2, 0, g);
+    en(cartel(texto, w * 0.8, h * 0.45, "#e8d9b0", "#7a352b", 0.62), 0, h / 2, d / 2 + 0.012, g);
+    return g;
+  };
+  const barril = (x: number, z: number, padre: THREE.Object3D, color = 0x9a6a44) => { const b = en(cilindro(0.3, 0.3, 0.8, color, 0.035, 14, { trama: "madera", rx: 2 }), x, 0.4, z, padre); for (const y of [-0.25, 0.25]) en(cilindro(0.31, 0.31, 0.05, 0x55606c, 0, 14), 0, y, 0, b); return b; };
+  const flor = (x: number, z: number, padre: THREE.Object3D, color: number, alto = 0.3) => { en(cilindro(0.012, 0.012, alto, 0x3f8b3f, 0, 5), x, alto / 2, z, padre); en(esfera(0.06, color, 0.012), x, alto + 0.03, z, padre); };
+  const maceta = (x: number, y: number, z: number, padre: THREE.Object3D, s = 1, color = 0x3f9b4b) => { en(cilindro(0.16 * s, 0.11 * s, 0.22 * s, 0xc9703f, 0.02, 12), x, y + 0.11 * s, z, padre); en(roca(0.2 * s, color, 0.025, { trama: "hojas" }, 1), x, y + 0.36 * s, z, padre); };
+  const banca = (x: number, z: number, padre: THREE.Object3D, giro = 0) => {
+    const g = en(new THREE.Group(), x, 0, z, padre); g.rotation.y = giro;
+    en(caja(1.4, 0.08, 0.4, 0x9a6a44, 0.025, { trama: "madera", rx: 2 }), 0, 0.45, 0, g); en(caja(1.4, 0.4, 0.07, 0x9a6a44, 0.025, { trama: "madera", rx: 2 }), 0, 0.8, -0.2, g);
+    for (const s of [-1, 1]) en(caja(0.08, 0.45, 0.4, 0x2b2b33, 0.02), s * 0.6, 0.22, 0, g);
+    return g;
+  };
+  const basurero = (x: number, z: number, padre: THREE.Object3D, color = 0x4f8f6a) => { en(cilindro(0.24, 0.2, 0.62, color, 0.03, 12, { trama: "metal" }), x, 0.31, z, padre); en(cilindro(0.26, 0.26, 0.05, 0x2b2b33, 0.015, 12), x, 0.64, z, padre); };
+  const buzon = (x: number, z: number, padre: THREE.Object3D, color = 0x3f6fb5) => { en(caja(0.08, 0.9, 0.08, 0x2b2b33, 0.02), x, 0.45, z, padre); en(caja(0.42, 0.34, 0.3, color, 0.03, { trama: "metal" }), x, 1.05, z, padre); en(caja(0.26, 0.03, 0.02, 0x1b1420, 0), x, 1.1, z + 0.16, padre); };
+  const bici = (x: number, z: number, padre: THREE.Object3D, giro = 0, color = 0xe2574c) => {
+    const g = en(new THREE.Group(), x, 0, z, padre); g.rotation.set(0, giro, 0.12);
+    for (const s of [-1, 1]) en(conTinta(new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.03, 6, 18), material(0x2b2b33)), 0.015), s * 0.5, 0.33, 0, g);
+    const t1 = en(caja(0.95, 0.045, 0.045, color, 0.012), 0, 0.6, 0, g); t1.rotation.z = 0.2;
+    en(caja(0.045, 0.5, 0.045, color, 0.012), -0.2, 0.62, 0, g); en(caja(0.24, 0.05, 0.1, 0x2b2b33, 0.012), -0.2, 0.9, 0, g); en(caja(0.05, 0.05, 0.42, 0x2b2b33, 0.012), 0.45, 0.92, 0, g);
+    return g;
+  };
+  const pajaro = (x: number, y: number, z: number, padre: THREE.Object3D, color = 0x55606c) => { en(esfera(0.09, color, 0.018), x, y + 0.09, z, padre); en(esfera(0.06, color, 0.014), x + 0.07, y + 0.17, z, padre); en(cono(0.02, 0.06, 0xf2b441, 0, 6), x + 0.14, y + 0.17, z, padre).rotation.z = -Math.PI / 2; };
+  const bolsaDinero = (x: number, z: number, padre: THREE.Object3D, s = 1) => {
+    const b = en(roca(0.26 * s, 0xcda86a, 0.03, { trama: "carton" }, 1), x, 0.22 * s, z, padre); b.scale.y = 1.05;
+    en(cilindro(0.07 * s, 0.11 * s, 0.12 * s, 0xcda86a, 0.02, 8), x, 0.5 * s, z, padre);
+    const p = pegatinaTexto("$", "#3f8b3f", 0.3 * s); p.position.set(x, 0.24 * s, z + 0.27 * s); padre.add(p);
+  };
+
+  // --- laboratorio de 1975: herramientas, piezas y papeles de un ingeniero
+  en(cartel("1975", 0.7, 0.34, "#d9482f", "#fff8ef", 0.7), 1.0, 2.75, -3.2, lab);                          // calendario
+  en(caja(0.72, 0.6, 0.03, 0xfff8ef, 0.02), 1.0, 2.3, -3.21, lab);
+  for (let i = 0; i < 20; i++) en(caja(0.07, 0.07, 0.01, i === 13 ? 0xd9482f : 0xc9c2b8, 0), 0.76 + (i % 5) * 0.12, 2.5 - Math.floor(i / 5) * 0.12, -3.19, lab);
+  en(caja(1.5, 1.0, 0.04, 0x2f5fa8, 0.03, { trama: "liso" }), -0.6, 2.75, -3.2, lab);                       // plano azul del aparato
+  for (const [x, y, w, h] of [[-0.9, 2.85, 0.5, 0.36], [-0.25, 2.6, 0.36, 0.4], [-0.3, 3.05, 0.5, 0.02], [-0.95, 2.45, 0.6, 0.02]]) en(caja(w, h, 0.01, 0xbfdcff, 0), x, y, -3.17, lab);
+  en(caja(0.9, 0.7, 0.05, 0xb98a5a, 0.03, { trama: "carton" }), 2.4, 2.6, -3.2, lab);                       // tablero de corcho con notas
+  [[2.2, 2.75, 0xfff3a0], [2.55, 2.7, 0xffb0c0], [2.3, 2.45, 0xbfe6f5], [2.62, 2.42, 0xfff8ef]].forEach(([x, y, col], i) => { en(caja(0.2, 0.2, 0.01, col, 0.008), x, y, -3.16, lab).rotation.z = (i - 1.5) * 0.12; });
+  en(caja(0.22, 0.34, 0.12, 0x3fae8a, 0.025), -4.1, 2.6, -3.18, lab); en(new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.02, 6, 12), material(0x2b2b33)), -4.1, 2.62, -3.1, lab);   // teléfono de pared
+  placa(-0.55, 1.08, -0.42, mesa, 0.3); placa(0.3, 1.08, -0.45, mesa, -0.2);                                 // sobre la mesa
+  en(cilindro(0.09, 0.09, 0.2, 0xc7e6ef, 0.02, 12), 0.75, 1.17, -0.45, mesa);                               // frasco de piezas
+  for (let i = 0; i < 5; i++) en(caja(0.02, 0.07, 0.02, [0xe2574c, 0xf2b441, 0x5d7bd6][i % 3], 0), 0.72 + (i % 3) * 0.03, 1.14, -0.47 + (i % 2) * 0.04, mesa);
+  en(cilindro(0.05, 0.05, 0.13, 0xd9482f, 0.015, 10), 1.05, 1.13, -0.42, mesa);                             // lapicero
+  for (const [dx, col] of [[-0.02, 0xf2b441], [0.02, 0x2f6fd6]]) en(cilindro(0.008, 0.008, 0.16, col, 0, 5), 1.05 + dx, 1.24, -0.42, mesa);
+  taza(1.5, 1.07, 0.2, mesa, 0xe2574c);                                                                      // café (sale vapor en la frase 2)
+  carrete(-0.2, 1.1, -0.48, mesa, 0.11); carrete(-0.2, 1.15, -0.48, mesa, 0.11);                             // rollos de estaño
+  en(caja(0.3, 0.2, 0.2, 0xf2b441, 0.025, { trama: "metal" }), -1.3, 1.17, 0.35, mesa);                     // multímetro
+  en(new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.08), luminoso(0xfff3d6, 1.3)), -1.3, 1.21, 0.455, mesa);
+  en(caja(0.6, 0.26, 0.3, 0xd9482f, 0.03, { trama: "metal" }), -1.6, 0.13, 1.9, lab).rotation.y = 0.5;      // caja de herramientas (cerca de la cámara)
+  en(caja(0.3, 0.05, 0.05, 0x2b2b33, 0.015), -1.6, 0.3, 1.9, lab).rotation.y = 0.5;
+  carrete(1.55, 0.03, 2.2, lab, 0.24).rotation.y = 0.4; carrete(1.75, 0.08, 2.05, lab, 0.2);                 // carretes de cinta en el piso
+  for (const [x, z, r] of [[1.9, -2.2, 0.07], [2.3, -2.3, 0.06], [2.0, -1.9, 0.05], [-1.2, 2.4, 0.06]]) en(roca(r, 0xfff8ef, 0.015), x, r, z, lab);   // bolas de papel
+  for (const [x, z, r, col] of [[0.9, 1.9, 0.3, 0x2b2b33], [-0.8, 2.6, 0.24, 0xd9482f], [2.4, 0.4, 0.34, 0x2b2b33]] as const) { const c = en(new THREE.Mesh(new THREE.TorusGeometry(r, 0.02, 6, 20), material(col)), x, 0.03, z, lab); c.rotation.x = Math.PI / 2; }   // cables
+  cajaRotulo("PIEZAS", 0.7, 0.5, 0.5, -3.0, -1.3, lab, 0.4); cajaRotulo("FRÁGIL", 0.6, 0.45, 0.5, -3.9, -2.2, lab, -0.2);
+  en(caja(0.9, 1.5, 0.5, 0x8d99a6, 0.035, { trama: "metal" }), 4.8, 0.75, -2.8, lab);                       // archivero al fondo
+  maceta(-1.3, 2.62, -3.05, lab, 1.1);                                                                        // planta en la ventana
+
+  // --- sala de juntas: cosas de oficina de los 70
+  en(cilindro(0.12, 0.1, 0.3, 0xbfe6f5, 0.02, 12), -1.6, 1.23, -1.3, sala);                                 // jarra de agua y vasos
+  for (const x of [-1.9, -1.35, 1.5]) en(cilindro(0.045, 0.04, 0.1, 0xdff3fa, 0.012, 10), x, 1.13, -1.05, sala);
+  en(cilindro(0.11, 0.09, 0.04, 0x8a9aa6, 0.015, 12), 0.45, 1.1, -0.85, sala);                               // cenicero
+  en(caja(0.3, 0.12, 0.2, 0x2b2b33, 0.02), 1.75, 1.14, -1.4, sala); en(caja(0.34, 0.06, 0.07, 0x2b2b33, 0.015), 1.75, 1.23, -1.4, sala);   // teléfono de disco
+  for (const [x, col] of [[-1.0, 0xe2574c], [0.05, 0x3fae8a], [1.05, 0x5d7bd6]]) { papel(x - 0.25, 1.09, -1.5, sala, 0.2, col); en(caja(0.3, 0.08, 0.05, 0xffd23f, 0.012), x, 1.12, -0.62, sala); }   // carpetas y placas con el nombre
+  en(cilindro(0.04, 0.04, 0.12, 0x2b2b33, 0.012, 8), -0.6, 1.14, -1.55, sala);                               // portaplumas
+  const credenza = en(new THREE.Group(), 2.9, 0, -3.0, sala);                                                // mueble bajo con trofeos
+  en(caja(1.9, 0.95, 0.5, 0x6e4326, 0.035, { trama: "madera", rx: 2 }), 0, 0.47, 0, credenza);
+  for (const x of [-0.45, 0.45]) { en(caja(0.8, 0.7, 0.03, 0x55321c, 0.02), x, 0.47, 0.26, credenza); en(esfera(0.035, 0xffd23f, 0.01), x * 0.2, 0.5, 0.29, credenza); }
+  en(esfera(0.2, 0x4f9ad6, 0.025), -0.6, 1.25, 0, credenza); en(cilindro(0.04, 0.12, 0.1, 0x7a5a2a, 0.015, 10), -0.6, 1.0, 0, credenza);   // globo terráqueo
+  for (const [x, h] of [[0.1, 0.34], [0.45, 0.26], [0.75, 0.3]]) { en(cilindro(0.07, 0.04, h, 0xffd23f, 0.018, 10), x, 0.95 + h / 2, 0, credenza); en(caja(0.16, 0.05, 0.16, 0x2b2b33, 0.012), x, 0.97, 0, credenza); }
+  const librero = en(new THREE.Group(), -4.6, 0, -3.0, sala);
+  en(caja(1.5, 3.4, 0.5, 0x6e4326, 0.035, { trama: "madera", rx: 2, ry: 3 }), 0, 1.7, 0, librero);
+  { const r = dado(77); for (let f = 0; f < 4; f++) { let x = -0.62; while (x < 0.55) { const w = 0.07 + r() * 0.08, h = 0.4 + r() * 0.22; en(caja(w, h, 0.3, [0x7a2f3a, 0x2f5a6a, 0x8a6a2a, 0x3a4a7a, 0x55321c][Math.floor(r() * 5)], 0.012), x + w / 2, 0.45 + f * 0.78 + h / 2, 0.13, librero); x += w + 0.01; } } }
+  en(acostado(cilindro(0.36, 0.36, 0.07, 0xfff8ef, 0.035)), -1.75, 4.45, -3.2, sala);                        // reloj de pared
+  for (const [a, l] of [[1.9, 0.2], [0.3, 0.28]]) { const h = caja(0.035, l, 0.02, 0x1b1420, 0); h.position.set(-1.75 + Math.sin(a) * l / 2, 4.45 + Math.cos(a) * l / 2, -3.15); h.rotation.z = -a; sala.add(h); }
+  cuadro(1.75, 4.4, -3.2, 0.5, 0.36, 0xfff8ef, sala);                                                        // diploma
+  for (const x of [-1.9, 1.9]) { en(caja(0.5, 0.36, 0.14, 0x7a4a2a, 0.022, { trama: "madera" }), x, 0.18, -0.3, sala).rotation.y = x * 0.2; en(caja(0.16, 0.05, 0.04, 0x2b2b33, 0.01), x, 0.38, -0.3, sala); }   // maletines junto a la mesa
+  en(cilindro(0.04, 0.06, 1.9, 0x55321c, 0.02, 8), 4.3, 0.95, -2.9, sala); en(cono(0.28, 0.16, 0x2b2b33, 0.02, 14), 4.3, 1.95, -2.9, sala);   // perchero con sombrero
+  basurero(-3.0, -2.5, sala, 0x8a5a3c);
+
+  // --- afuera de la fábrica
+  cajaRotulo("ROLLOS", 0.9, 0.7, 0.7, 2.6, -3.5, fuera, -0.15); cajaRotulo("ROLLOS", 0.8, 0.6, 0.7, 3.5, -3.6, fuera, 0.25); cajaRotulo("ROLLOS", 0.7, 0.5, 0.6, 2.7, -3.5, fuera, 0.3, 0.7);
+  barril(-3.5, -3.5, fuera); barril(-4.1, -3.3, fuera, 0x5d7bd6);
+  buzon(1.75, 3.2, fuera); banca(-2.75, -3.35, fuera, 0.05); bici(2.35, 5.5, fuera, 1.45);
+  { const r = dado(42); for (let i = 0; i < 36; i++) { const s = i % 2 ? 1 : -1; flor(s * (1.55 + r() * 0.35), -2.5 + r() * 12, fuera, [0xff6f8f, 0xffd23f, 0xfff8ef, 0xb06fd6][i % 4], 0.2 + r() * 0.16); } }   // flores a los lados del camino
+  for (const x of [-3.1, -0.6, 2.4]) pajaro(x, 4.62, -3.9, fuera);                                           // pájaros en la cornisa
+  en(acostado(cilindro(0.34, 0.34, 0.07, 0xfff8ef, 0.035)), 0, 2.95, -3.97, fuera);                          // reloj sobre la puerta
+  en(caja(0.07, 2.2, 0.07, 0xc7ccd4, 0.02), -3.6, 5.7, -4.2, fuera); en(caja(0.7, 0.42, 0.02, 0xf6c32c, 0.02), -3.22, 6.55, -4.2, fuera);   // asta con bandera amarilla
+  en(caja(1.2, 0.14, 1.0, 0xb98a5a, 0.03, { trama: "madera" }), 3.3, 0.07, -2.4, fuera);                    // tarima
+  for (const [x, z, r] of [[0.7, 6.5, 0.5], [-0.6, 10, 0.4]]) { const c = en(cilindro(r, r, 0.012, 0x9fd0f0, 0, 18), x, 0.05, z, fuera); c.scale.z = 0.6; }   // charcos
+  en(caja(0.07, 1.3, 0.07, 0xfff8ef, 0.02), -1.75, 0.65, 1.2, fuera); en(cartel("ENTRADA", 0.9, 0.3, "#3f6fb5", "#fff8ef", 0.66), -1.75, 1.2, 1.25, fuera);   // letrero
+  basurero(1.75, -2.9, fuera, 0x7a8794);
+
+  // --- la calle de los años 2000
+  banca(-0.9, -2.75, calle); banca(4.6, -2.75, calle); basurero(0.6, -2.7, calle); basurero(-5.2, -2.7, calle, 0x5d7bd6);
+  buzon(2.2, -2.75, calle, 0xe2382c); bici(6.2, -2.7, calle, 0.1, 0x3fa3c9);
+  for (const x of [-4.6, -2.6, 1.3, 3.2, 5.6, 7.6]) maceta(x, 0.1, -2.95, calle, 1.5, x % 2 ? 0x54b35c : 0x3f9b4b);
+  { const g = en(new THREE.Group(), -2.0, 0.1, -2.5, calle); for (const s of [-1, 1]) { const t = en(caja(0.6, 0.9, 0.04, 0x2b2b33, 0.02), 0, 0.42, s * 0.14, g); t.rotation.x = s * 0.28; } en(cartel("WIFI\nGRATIS", 0.5, 0.6, "#2b2b33", "#7dff9a", 0.7), 0, 0.45, 0.185, g).rotation.x = 0.28; }   // letrero de piso
+  en(caja(4.2, 1.5, 0.12, 0x2b2b33, 0.04), 1.9, 8.1, -4.4, calle); en(cartel("FOTO DIGITAL", 4.0, 1.3, "#5d7bd6", "#fff8ef", 0.6), 1.9, 8.1, -4.32, calle);   // anuncio en la azotea
+  for (const x of [1.0, 2.8]) en(caja(0.1, 0.9, 0.1, 0x2b2b33, 0.02), x, 7.0, -4.4, calle);
+  for (const [x, y] of [[-5.4, 7.5], [5.6, 9], [9.3, 7.5]]) { en(cilindro(0.02, 0.02, 1.0, 0x9aa3ad, 0.012, 5), x + 0.8, y + 0.5, -4.6, calle); const p = en(cono(0.4, 0.16, 0xdfe5ea, 0.025, 14), x - 0.6, y + 0.3, -4.4, calle); p.rotation.x = 2.2; }   // antenas y parabólicas
+  for (const [x, y] of [[-6.3, 3.0], [0.9, 4.6], [6.6, 3.1]]) en(caja(0.6, 0.4, 0.3, 0xdfe5ea, 0.025, { trama: "metal" }), x, y, -2.95, calle);   // aires acondicionados
+  for (const [x, z] of [[-1.2, -1.9], [3.6, -1.6], [3.95, -1.8], [-6, 1.6]]) pajaro(x, 0.1, z, calle, 0x8a93a0);   // palomas
+  en(cilindro(0.5, 0.5, 0.02, 0x4a505c, 0.02, 16, { trama: "metal" }), 1.8, 0.115, 1.6, calle);              // tapa de alcantarilla
+  for (const [x, z] of [[-2.2, 2.2], [0.4, 2.6]]) en(cono(0.16, 0.42, 0xff7a2a, 0.022, 12), x, 0.31, z, calle);   // conos (cerca de la cámara)
+  en(caja(0.08, 2.6, 0.08, 0x8a93a0, 0.02), 5.4, 1.3, -2.2, calle); en(cartel("CALLE 12", 0.9, 0.26, "#3fae8a", "#fff8ef", 0.66), 5.4, 2.5, -2.14, calle);
+
+  // --- la noche de la explicación: el negocio de los rollos
+  bolsaDinero(-2.0, 0.2, noche, 1.1); bolsaDinero(-1.75, 0.75, noche, 0.8); bolsaDinero(2.2, -0.6, noche, 1.0);
+  cajaRotulo("ROLLOS", 0.8, 0.6, 0.7, -2.4, -1.4, noche, 0.3); cajaRotulo("ROLLOS", 0.7, 0.5, 0.6, -2.3, -1.4, noche, -0.2, 0.6); cajaRotulo("ROLLOS", 0.8, 0.6, 0.7, 2.6, -1.9, noche, -0.3);
+  const fuerte = en(new THREE.Group(), 2.1, 0, -1.7, noche); fuerte.rotation.y = -0.35;                      // caja fuerte
+  en(caja(1.0, 1.2, 0.8, 0x55606c, 0.04, { trama: "metal" }), 0, 0.6, 0, fuerte); en(caja(0.8, 1.0, 0.04, 0x6f7b88, 0.025), 0, 0.6, 0.41, fuerte);
+  en(acostado(cilindro(0.14, 0.14, 0.06, 0xc7ccd4, 0.02, 14)), 0, 0.65, 0.45, fuerte); en(caja(0.06, 0.22, 0.05, 0x2b2b33, 0.012), 0.28, 0.6, 0.45, fuerte);
+  en(caja(1.5, 1.1, 0.08, 0x55321c, 0.03, { trama: "madera" }), -2.3, 2.3, -2.4, noche); en(cartel("VENTAS ↗", 1.36, 0.96, "#fff8ef", "#d9482f", 0.5), -2.3, 2.3, -2.35, noche);   // pizarra de ventas
+  for (const x of [-2.9, -1.7]) en(caja(0.07, 1.8, 0.07, 0x55321c, 0.02), x, 0.9, -2.4, noche);
+  { const r = dado(9); for (let i = 0; i < 9; i++) { const x = (i % 2 ? 1 : -1) * (1.5 + r() * 1.6), z = 0.9 + r() * 1.8, n = 2 + Math.floor(r() * 5); for (let k = 0; k < n; k++) en(cilindro(0.15, 0.15, 0.045, 0xffd23f, 0.018, 14), x, 0.03 + k * 0.047, z, noche); } }   // pilas de monedas
+  barril(3.4, -0.8, noche, 0x5a4a9a); barril(-3.5, -0.2, noche, 0x5a4a9a);
+  for (const [x, z, sz] of [[-3.6, 1.8, 0.9], [3.5, 1.6, 1.0], [0.4, -3.6, 1.2], [-4.6, -2, 1.1]]) arbusto(x, z, noche, sz);
+  for (const [x, z] of [[-1.3, 3.1], [1.5, 3.3]]) { en(caja(0.14, 0.9, 0.14, 0x8a8ac8, 0.03), x, 0.45, z, noche); en(caja(1.2, 0.1, 0.06, 0x8a8ac8, 0.02), x, 0.62, z, noche); }   // cerca (cerca de la cámara)
+
   // ------------------------------------------------------------------ OBJETOS que se mueven
+
   const cosas = grupo(escena);
   // La cámara digital de 1975: una caja azul con lente, circuitos encima y ranura de casete.
   const camara = grupo(cosas);
