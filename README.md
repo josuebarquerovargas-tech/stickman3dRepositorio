@@ -52,7 +52,14 @@ Para revisar rápido cómo se ve un momento sin renderizar todo:
 
 ```bash
 node scripts/fotos.mjs 1.5,12,30     # guarda fotos de esos segundos en out/fotos/
+GL=angle node scripts/fotos.mjs 1.5,12,30 0.4 out/prueba   # con tarjeta gráfica, a 40 % de tamaño, en otra carpeta
+node scripts/momentos.mjs 3:16+0.5 9:cajón+0.6             # ¿en qué segundo cae una palabra? (frase:palabra+desfase)
+sh scripts/hoja.sh out/fotos out/hoja.jpg 6x4               # junta las fotos en una sola hoja para compararlas
 ```
+
+> **En Windows**, si `npm run voz` o `npm run musica` dicen que no encuentran `python3`, usa
+> `py -3 scripts/voz.py` y `py -3 scripts/musica.py`. En PowerShell la clave de ElevenLabs se pasa así:
+> `$env:ELEVENLABS_API_KEY="tu_clave"; py -3 scripts/voz.py --elevenlabs`
 
 > Sin tarjeta gráfica usa `npm run video:servidor` (más lento). En Linux con GPU: agrega `--gl=angle-egl`.
 > Si Remotion no logra descargar su navegador, usa un Chrome que ya tengas:
@@ -87,9 +94,16 @@ scripts/
 3. **Construye lo que se ve** en `mundo.ts`: escenarios y objetos con `caja(...)`, `cilindro(...)`, `cartel(...)`.
    Para que se vea pintado, pasa una trama: `caja(3, 0.1, 1, 0x9a6a44, 0.035, { trama: "madera" })`.
 4. **Dirige cada frase** en `tomas.ts`. Hay un `case` por frase. Dentro usas:
-   - `luz("dia" | "interior" | "drama" | "noche" | "gris")` para el ambiente.
-   - `camara(u, desde, miraA, hasta, miraA2)` para mover la cámara (enfoca sola a lo que mira).
+   - `luz("dia" | "interior" | "tarde" | "anochecer" | "sala" | "drama" | "noche" | "amanecer" | "ocaso")` para el
+     ambiente. Con dos tipos y un avance, `luz("tarde", "anochecer", u)`, la luz cambia poco a poco.
+   - `camara(u, desde, miraA, hasta, miraA2)` para mover la cámara (enfoca sola a lo que mira). Criterio: cámara
+     **baja y cerca**; con dos personajes, en diagonal para que uno quede delante y otro detrás.
+   - `frente(objeto, fx, fy, distancia)` pone un objeto borroso en una esquina, pegado al lente.
    - `personaje.poner(x, z)`, `.cara = "feliz"`, `.brazo("d", ángulo)`, `.alcanzar(...)`.
+   - Cuerpo y gesto: `.agacha` (rodillas), `.ladea` (cabeza), `.miraY` (mira arriba/abajo), `.parpado`, `.ceja`.
+   - `sostener(personaje, alto, adelante, objeto)` para que cargue algo con las dos manos.
+   - Transiciones: agrega el segundo del cambio a `BARRIDOS` (mismo lugar) o a `FUNDIDOS` (lugar nuevo).
+
    - `P(frase, "palabra")` para saber en qué segundo se dice una palabra y sincronizar una acción con ella.
 5. **Mira fotos de prueba** con `node scripts/fotos.mjs` y ajusta.
 6. **Música**: `npm run musica`, y luego `npm run video`.
