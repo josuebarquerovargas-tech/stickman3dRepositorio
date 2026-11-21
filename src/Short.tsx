@@ -6,7 +6,7 @@ import { ThreeCanvas } from "@remotion/three";
 import { useThree, useFrame } from "@react-three/fiber";
 import "@fontsource/montserrat/900.css";
 import { crearMundo } from "./historia/mundo";
-import { aplicarToma, destelloPantalla } from "./historia/tomas";
+import { aplicarToma, destelloPantalla, fundido } from "./historia/tomas";
 import { Subtitulos } from "./Subtitulos";
 import { Post } from "./motor/post";
 
@@ -37,6 +37,8 @@ export const Short: React.FC<{ subtitulos?: boolean; audio?: boolean }> = ({ sub
         <Escena />
       </ThreeCanvas>
       <AbsoluteFill style={{ backgroundColor: "white", opacity: destelloPantalla(s) }} />
+      <AbsoluteFill style={{ backgroundColor: "#14101c", opacity: fundido(s) }} />
+
       {subtitulos && <Subtitulos />}
       {audio && <Audio src={staticFile("voz.mp3")} />}
       {audio && <Audio src={staticFile("musica.wav")} volume={0.5} />}

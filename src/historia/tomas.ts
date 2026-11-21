@@ -52,7 +52,46 @@ const LUCES = {
 type TipoLuz = keyof typeof LUCES;
 const mezclaColor = (a: number, b: number, k: number) => new THREE.Color(a).lerp(new THREE.Color(b), k);
 
+// TRANSICIONES. Ya no hay cortes secos:
+//  - BARRIDOS: dentro del mismo lugar, la cámara viaja rápido desde donde estaba hasta la toma nueva.
+//  - FUNDIDOS: al cambiar de lugar, la imagen se oscurece 3 cuadros y vuelve en otros 3 (6 en total).
+/** [segundo en que cambia la toma, cuánto dura el viaje de la cámara] */
+const BARRIDOS: [number, number][] = [
+  [P(1, "Steve") - 0.25, 0.6],      // de la vista general de la fábrica baja hasta Steve caminando
+  [P(1, "la"), 0.35],               // sube de Steve al rollo gigante
+  [L(3), 0.35], [L(4), 0.4], [L(5), 0.35],   // todo el laboratorio es un solo movimiento
+  [P(6, "Ellos") - 0.1, 0.3], [P(6, "fotos"), 0.35], [L(7), 0.3],   // sala de juntas
+  [P(8, "Una") - 0.1, 0.35],        // de las monedas a la cámara "enemiga"
+  [L(12), 0.4],                     // del jefe con su caja a Steve
+];
+const FUNDIDOS = [L(1), L(2), L(6), L(8), L(9), L(10), L(11)];
+/** Oscuridad de pantalla completa (0..1) para los fundidos entre lugares. */
+export function fundido(s: number) {
+  let o = 0;
+  for (const t0 of FUNDIDOS) o = Math.max(o, 1 - Math.abs(s - t0 + 0.5 / FPS) / (3.5 / FPS));
+  return c01(o);
+}
+
 export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, cuadro: number) {
+  const b = BARRIDOS.find(([t0, dura]) => s >= t0 && s < t0 + dura);
+  if (!b) { tomaBase(m, cam, s, cuadro); m.todos.forEach((p) => p.terminar(cuadro)); return; }
+  // 1) ¿dónde estaba la cámara en el último cuadro de la toma anterior?
+  tomaBase(m, cam, b[0] - 1 / FPS, cuadro);
+  const p0 = cam.position.clone(), q0 = cam.quaternion.clone(), fov0 = cam.fov, foco0 = m.look.foco;
+  // 2) armamos la toma nueva y llevamos la cámara de un lugar al otro
+  tomaBase(m, cam, s, cuadro);
+  const k = suave2((s - b[0]) / b[1]);
+  cam.position.copy(p0.lerp(cam.position, k)); cam.quaternion.copy(q0.slerp(cam.quaternion, k));
+  cam.fov = lerp(fov0, cam.fov, k); cam.updateProjectionMatrix(); cam.updateMatrixWorld();
+  m.look.foco = lerp(foco0, m.look.foco, k);
+  m.look.apertura *= 1 + Math.sin(k * Math.PI) * 0.8;      // a media carrera todo se ve más borroso, como en un barrido real
+  m.todos.forEach((p) => {                                  // los personajes vuelven a mirar a la cámara
+    if (p.grupo.visible) p.grupo.rotation.y = Math.atan2(cam.position.x - p.grupo.position.x, cam.position.z - p.grupo.position.z);
+    p.terminar(cuadro);
+  });
+}
+
+function tomaBase(m: Mundo, cam: THREE.PerspectiveCamera, s: number, cuadro: number) {
   const { steve, jefe, jefe2, jefe3, ayudante } = m.actores;
   m.reiniciar();
   Personaje.camara = cam;
@@ -447,14 +486,13 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
       break;
     }
   }
-  m.todos.forEach((p) => p.terminar(cuadro));
 }
 
-/** Destello blanco de pantalla completa (0..1): en la foto y en algunos cambios de lugar. */
+/** Destello blanco de pantalla completa (0..1): solo el flash de la foto. */
 export function destelloPantalla(s: number) {
   let o = 0;
   const pico = (t0: number, dur: number) => { const k = (s - t0) / dur; if (k >= 0 && k < 1) o = Math.max(o, 1 - k); };
   pico(P(4, "foto"), 0.3);
-  [1, 8, 10].forEach((n) => pico(L(n), 0.14));
+
   return o;
 }
