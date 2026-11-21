@@ -34,11 +34,24 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
 
   // --- ayudas -------------------------------------------------------------
   /** Coloca la cámara: va de (pos0, mira0) a (pos1, mira1) según u. */
-  const camara = (u: number, pos0: V3, mira0: V3, pos1: V3 = pos0, mira1: V3 = mira0, fov = 40) => {
+  // Criterio: cámara BAJA (a la altura de la cintura o menos) y CERCA, mirando un poco hacia arriba,
+  // para que los personajes llenen más de media pantalla. Con dos personajes, la cámara se pone
+  // en diagonal: uno queda cerca y el otro detrás, en vez de los dos chiquitos de frente.
+  let anclas: { p: THREE.Vector3; q: THREE.Quaternion; fov: number }[] = [];
+  const camara = (u: number, pos0: V3, mira0: V3, pos1: V3 = pos0, mira1: V3 = mira0, fov = 40, fov1 = fov) => {
+    anclas = ([[pos0, mira0, fov], [pos1, mira1, fov1]] as const).map(([p, mi, f]) => {
+      cam.position.set(...p); cam.lookAt(v(mi)); return { p: cam.position.clone(), q: cam.quaternion.clone(), fov: f }; });
     cam.position.lerpVectors(v(pos0), v(pos1), u);
     cam.lookAt(v(mira0).lerp(v(mira1), u));
-    cam.fov = fov; cam.updateProjectionMatrix(); cam.updateMatrixWorld();
+    cam.fov = lerp(fov, fov1, u); cam.updateProjectionMatrix(); cam.updateMatrixWorld();
     m.look.foco = cam.position.distanceTo(v(mira0).lerp(v(mira1), u));   // enfoca a lo que mira
+  };
+  /** Objeto borroso en primer plano. (fx, fy) = lugar en la pantalla, de -1 a 1; d = distancia a la cámara.
+   *  `k` dice desde qué momento de la toma se mide ese lugar (0 = inicio, 1 = final). Con k fijo el objeto queda
+   *  quieto en el mundo y se desliza cuando la cámara se mueve; con k = avance de la toma, acompaña a la cámara. */
+  const frente = (o: THREE.Object3D, fx: number, fy: number, d: number, escala = 1, giro = 0, k = 1) => {
+    const [p0, p1] = anclas.map((a) => { const h = d * Math.tan((a.fov * Math.PI) / 360); return new THREE.Vector3(fx * h * 9 / 16, fy * h, -d).applyQuaternion(a.q).add(a.p); });
+    o.visible = true; o.position.lerpVectors(p0, p1, k); o.scale.setScalar(escala); o.rotation.y = giro; return o;
   };
   /** Ambiente de luz, niebla y color de cada tipo de escena. */
   const luz = (tipo: "dia" | "interior" | "drama" | "noche" | "gris") => {
@@ -80,7 +93,9 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
     case 0: {
       m.sets.lab.visible = true; luz("interior");
       const atras = suave(tramo(t, 0.05, 0.5));
-      camara(atras, [0, 0.95, 2.2], [0, 0.95, 0.4], [0.5 - u * 0.3, 1.5, 5.6 - u * 0.5], [0, 1.2, 0.4]);
+      const caeCam = suave2(tramo(s, P(0, "empresa") - 0.35, P(0, "escondió")));
+      if (caeCam <= 0) { camara(atras, [0.3, 0.62, 2.2], [0, 0.92, 0.75], [0.85, 0.62, 3.5], [0, 1.28, 0.5]); frente(m.primeros.libros, -0.8, -1.02, 1.3, 0.9, 0.5, lerp(0.35, 1, atras)); }
+      else { camara(caeCam, [0.85, 0.62, 3.5], [0, 1.28, 0.5], [0.45, 0.6, 4.7], [0, 1.02, 0.9], 40, 46); frente(m.primeros.libros, -0.8 - caeCam, -1.02 - caeCam * 0.4, 1.3, 0.9, 0.5, caeCam); }
       steve.poner(0, 0.4); steve.cara = "feliz"; steve.salto = Math.abs(Math.sin(t * 7)) * 0.05 * (1 - tramo(s, P(0, "empresa"), P(0, "escondió")));
       sostener(steve);
       // la caja "TOP SECRETO" le cae encima
@@ -99,8 +114,8 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
       const tSteve = P(1, "Steve") - L(1), tReina = P(1, "la") - L(1);
       const z = lerp(8.5, 2.2, suave2(tramo(t, tSteve - 0.6, tReina + 0.3)));
       if (t < tSteve - 0.25) camara(suave(tramo(t, 0, tSteve - 0.25)), [3.5, 9, 22], [0, 3.5, -6], [1.5, 3.4, 15], [0, 3.2, -6]);
-      else if (t < tReina) camara(suave(tramo(t, tSteve - 0.25, tReina)), [1.4, 1.5, z + 5.6], [-0.3, 1.3, z], [1.0, 1.5, z + 4.6], [-0.3, 1.35, z]);
-      else camara(suave(tramo(t, tReina, tReina + 0.5)), [0.5, 2.2, 6], [0.6, 3.6, -6], [0.2, 3.0, 4.2], [1.4, 5.7, -6], 38);
+      else if (t < tReina) camara(suave(tramo(t, tSteve - 0.25, tReina)), [1.82, 0.5, z + 3.3], [-0.3, 1.3, z], [1.72, 0.55, z + 2.7], [-0.3, 1.38, z]);   // pegada a la cerca: los postes pasan borrosos
+      else { camara(suave(tramo(t, tReina, tReina + 0.5)), [0.5, 1.6, 6.4], [0.6, 3.6, -6], [0.2, 2.6, 4.6], [1.4, 5.7, -6], 38); frente(m.primeros.hojas, -0.7, 0.72, 1.3, 1.2); }
       if (t > tSteve - 0.25) steve.poner(-0.3, z); steve.cara = "feliz"; steve.paso = z > 2.25 ? t * 10 : 0; steve.salto = z > 2.25 ? Math.abs(Math.sin(t * 10)) * 0.05 : 0;
       if (s > P(1, "24")) steve.brazo("d", 2.5 + Math.sin(t * 12) * 0.25, 0.2);       // saluda
       // la corona cae sobre el rollo gigante: "la reina de los rollos"
@@ -114,7 +129,8 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
     case 2: {
       m.sets.lab.visible = true; luz("interior");
       const cerca = suave(tramo(s, P(2, "dice") - 0.1, P(2, "dice") + 0.35));
-      camara(cerca, [0, 1.45, 6.0 - u * 0.5], [0, 1.25, 0.3], [0.1, 1.5, 4.9], [0.05, 1.35, 0.3]);
+      camara(cerca, [2.0 - u * 0.2, 0.75, 4.1 - u * 0.3], [0.05, 1.32, 0.3], [1.55, 0.8, 3.2], [0.2, 1.38, 0.3], 46);
+      frente(m.primeros.rollos, 0.72, -1.0, 1.25, 0.7, 0.4, lerp(0.3, 1, cerca));
       jefe.poner(-0.78, 0.3); jefe.mira = 1; steve.poner(0.78, 0.3); steve.mira = -1;
       const pase = suave2(tramo(s, P(2, "pasa"), P(2, "nuevo")));
       jefe.alcanzar("d", CX + lerp(90, 190, c01(pase * 2) - c01(pase * 2 - 1.4) * 0.6), lerp(470, 395, c01(pase * 2)));
@@ -130,11 +146,14 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
     // 3 — "Steve arma un aparato del tamaño de una tostadora. Pesa casi 4 kilos, usa 16 pilas y guarda las fotos en un casete."
     case 3: {
       m.sets.lab.visible = true; luz("interior");
-      camara(suave2(u), [0.5, 2.1, 3.2], [0, 1.4, -1.3], [-0.3, 2.0, 2.9], [0, 1.4, -1.3], 42);
-      steve.poner(0, -2.0); steve.cara = "feliz";
       const tA = P(3, "aparato"), tT = P(3, "tostadora"), tP = P(3, "Pesa"), tK = P(3, "4"), tU = P(3, "usa"), tPi = P(3, "16"), tC = P(3, "casete");
       // la cámara aparece por partes
       const sube = suave2(tramo(s, tP, tK + 0.2)) * (1 - suave2(tramo(s, tU - 0.35, tU)));
+      // a la altura de la mesa y en diagonal: la fila de pilas se aleja desde el primer plano
+      const lado = suave2(tramo(s, tU - 0.35, tPi + 0.25));
+      camara(lado, [0.55, 1.5, 1.8], [0.08, 1.5 + sube * 0.5, -1.5], [-1.55, 1.3, 0.1], [0.15, 1.27, -1.25], 46);
+
+      steve.poner(0, -2.0); steve.cara = "feliz";
       const tiembla = sube > 0.2 ? Math.sin(s * 40) * 0.012 : 0;
       ver(m.camara, -0.32 + tiembla, 1.07 + sube * 0.5, -1.32); m.camara.rotation.y = 0.25;
       m.camCuerpo.scale.setScalar(rebote(tramo(s, tA, tA + 0.3)) || 0.001);
@@ -146,7 +165,8 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
       const tost = rebote(tramo(s, tT, tT + 0.3)) * (1 - suave(tramo(s, tP - 0.3, tP)));
       if (tost > 0.01) { ver(m.tostadora, 0.62, 1.07, -1.2, tost); m.tostadora.rotation.y = -0.2; m.panes.forEach((p) => (p.position.y = 0.3 + Math.abs(Math.sin(c01((s - tT - 0.35) * 2.2) * Math.PI)) * 0.3)); }
       if (s > tT && s < tP) steve.brazo("d", 1.5, 0.2);
-      if (sube > 0.3) ver(m.kilos, -0.3, 2.75, -1.1, 0.9 * rebote(tramo(s, tK, tK + 0.25)));
+      if (sube > 0.3) ver(m.kilos, -0.3, 2.55, -1.1, 0.9 * rebote(tramo(s, tK, tK + 0.25)));
+
       // 16 pilas en fila
       m.pilas.forEach((p, i) => { const k = rebote(tramo(s, tPi + i * 0.045, tPi + i * 0.045 + 0.2)); if (k > 0) ver(p, -0.86 + i * 0.115, 1.135, -0.76, k); });
       // el casete vuela a su ranura
@@ -158,7 +178,8 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
     // 4 — "Toma su primera foto. Tarda 23 segundos en grabarse."
     case 4: {
       m.sets.lab.visible = true; luz("interior");
-      camara(suave2(u), [0, 1.5, 6.6], [0, 1.3, 0.4], [0, 1.5, 6.0], [0, 1.3, 0.4]);
+      camara(suave2(tramo(s, P(4, "Tarda") - 0.2, tiempos.lineas[4].fin)), [-1.9, 0.8, 4.3], [0, 1.35, 0.4], [-1.25, 0.9, 3.0], [0.45, 1.5, 0.4], 48, 46);
+      frente(m.primeros.libros, 0.8, -1.05, 1.3, 0.8, -0.6, 0.15);
       steve.poner(-0.85, 0.4); steve.mira = 1; ayudante.poner(0.85, 0.4); ayudante.mira = -1;
       const tF = P(4, "foto"), tT = P(4, "Tarda"), fin = tiempos.lineas[4].fin;
       const p = steve.grupo.position;
@@ -170,14 +191,15 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
       steve.cara = s < tT ? "feliz" : "neutral";
       const fl = tramo(s, tF, tF + 0.3);
       if (fl > 0 && fl < 1) ver(m.destellos[0], p.x + 1.0, 1.2, p.z + 0.4, 2.2 * (1 - fl));
-      if (s > tT) { const seg = Math.round(lerp(0, 23, tramo(s, tT, fin - 0.25))); m.contador.texto(`${seg} s`, seg >= 23 ? "#7dff9a" : "#ffffff"); ver(m.contador.sprite, 0, 2.75, 0.5); m.contador.sprite.scale.set(1.5, 0.75, 1); }
+      if (s > tT) { const seg = Math.round(lerp(0, 23, tramo(s, tT, fin - 0.25))); m.contador.texto(`${seg} s`, seg >= 23 ? "#7dff9a" : "#ffffff"); ver(m.contador.sprite, 0.1, 2.5, 0.4); m.contador.sprite.scale.set(1.3, 0.65, 1); }
       break;
     }
     // 5 — "Y sale en blanco y negro, en un televisor, con apenas 100 por 100 puntitos."
     case 5: {
       m.sets.lab.visible = true; luz("interior");
       const z = suave2(tramo(s, P(5, "con"), P(5, "100") + 0.6));
-      camara(z, [0.5 - u * 0.4, 1.5, 5.2 - u * 0.6], [-0.2, 1.25, 0.2], [-0.12, 1.22, 2.0], [-0.12, 1.2, 0.4], 42);
+      camara(z, [1.0 - u * 0.3, 0.7, 2.9 - u * 0.3], [-0.4, 1.25, 0.2], [-0.12, 1.22, 2.0], [-0.12, 1.2, 0.4], 42);
+      if (z < 0.5) frente(m.primeros.rollos, -0.78, -1.0, 1.3, 0.7, -0.3, 0);
       ver(m.tele, 0, 0, 0); m.pantalla(tramo(t, 0.15, 1.3));
       steve.poner(-1.05, -0.2); steve.mira = 1; steve.cara = "feliz";
       if (t > 1.3) { steve.brazo("i", 2.6, 0.2).brazo("d", 2.6, 0.2); steve.salto = Math.abs(Math.sin(t * 9)) * 0.12; }
@@ -187,9 +209,9 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
     case 6: {
       m.sets.sala.visible = true; luz("interior"); m.pantalla(1);
       const tR = P(6, "Ellos"), tQ = P(6, "quién"), tV = P(6, "fotos");
-      if (s < tR - 0.1) camara(suave(u * 2.5), [0, 2.6, 9.5], [0, 1.4, -0.6], [0, 2.3, 8.6], [0, 1.4, -0.6], 46);
-      else if (s < tV) camara(tramo(s, tR, tV), [0, 1.9, 3.9], [0, 1.75, -2.1], [0, 1.85, 3.5], [0, 1.75, -2.1], 50);
-      else camara(suave2(tramo(s, tV, L(7))), [0.2, 1.5, 5.6], [0.1, 1.25, 0.8], [0.2, 1.5, 5.0], [0.1, 1.25, 0.8]);
+      if (s < tR - 0.1) { camara(suave(u * 2.5), [-2.1, 0.8, 4.0], [0.15, 1.4, -0.6], [-1.8, 0.85, 3.5], [0.15, 1.4, -0.6], 48); frente(m.primeros.silla, 0.7, -1.45, 1.1, 1, 0.5); }
+      else if (s < tV) camara(tramo(s, tR, tV), [1.9, 1.15, 0.5], [-0.1, 1.72, -2.1], [1.7, 1.15, 0.2], [-0.1, 1.72, -2.1], 52);   // en diagonal, al ras de la mesa
+      else camara(suave2(tramo(s, tV, L(7))), [-1.6, 0.85, 3.6], [-0.45, 1.5, 0.9], [-1.45, 0.9, 3.3], [-0.45, 1.52, 0.9]);
       const jefes = [jefe2, jefe, jefe3];
       jefes.forEach((j, i) => {
         j.poner((i - 1) * 1.0, -2.1);
@@ -209,7 +231,7 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
       m.sets.sala.visible = true;
       const tL = P(7, "qué"), tN = P(7, "pero");
       luz(s > tN ? "drama" : "interior");
-      camara(suave2(u), [0.25, 1.8, 1.9], [0, 1.7, -2.1], [0.1, 1.78, 0.9], [0, 1.7, -2.1], 36);
+      camara(suave2(u), [0.5, 1.22, 1.0], [0, 1.72, -2.1], [0.2, 1.27, -0.05], [0, 1.72, -2.1], 38);
       jefe.poner(0, -2.1);
       if (s < tN) { jefe.cara = "feliz"; hablar(jefe, tL, tN - 0.25); jefe.brazo("i", 1.0, 1.4); }
       else { jefe.cara = "serio"; jefe.alcanzar("d", CX + 8, lerp(420, 268, suave(tramo(s, tN, tN + 0.25)))); }
@@ -220,7 +242,7 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
       m.sets.noche.visible = true; luz("noche");
       const tG = P(8, "ganaba"), tU = P(8, "Una"), tE = P(8, "peor");
       if (s < tU - 0.1) {
-        camara(suave(tramo(t, 0, 0.6)), [0, 3.4, 9], [0, 1.2, 0], [0.2, 1.7, 6.6 - u * 0.8], [0, 1.25, 0], 42);
+        camara(suave(tramo(t, 0, 0.6)), [0.2, 0.7, 6.2], [0, 1.15, 0], [0.45, 0.38, 4.4 - u * 0.5], [0.05, 1.22, 0], 46);
         jefe.poner(0.85, 0.3); jefe.cara = "feliz"; jefe.mira = -0.5;
         if (s > tG) { jefe.brazo("i", 2.6, 0.2).brazo("d", 2.6, 0.2); jefe.salto = Math.abs(Math.sin(s * 9)) * 0.1; }
         m.monedas.forEach((mo, i) => {
@@ -230,7 +252,8 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
           ver(mo, x, lerp(7, 0.05, k * k) + (k >= 1 ? 0 : 0), z); if (k >= 1) mo.rotation.x = 0; else mo.rotation.x = s * 9 + i;
         });
       } else {
-        camara(suave(tramo(s, tU - 0.1, tU + 0.5)), [0.4, 1.6, 4.2], [0, 1.2, 0.3], [0.3, 1.5, 5.4], [0.15, 1.15, 0.3], 42);
+        camara(suave(tramo(s, tU - 0.1, tU + 0.5)), [-0.8, 0.5, 2.5], [0.15, 1.15, 0.35], [-1.0, 0.4, 3.1], [0.2, 1.2, 0.35], 46);
+        frente(m.primeros.rollos, 0.78, -1.02, 1.3, 0.7, 0.8);
         m.pila.visible = false; m.pedestal.visible = true;
         ver(m.camara, -0.3, 0.8, 0.4, 1.25); m.camara.rotation.y = 0.35;
         jefe.poner(1.0, 0.3); jefe.mira = -1; jefe.cara = "sorpresa";
@@ -249,7 +272,9 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
       const tI = P(9, "invento"), tC = P(9, "cajón");
       const cierra = suave(tramo(s, tC, tC + 0.22));
       const golpe = cierra >= 1 ? Math.sin((s - tC) * 60) * 0.03 * Math.max(0, 1 - (s - tC - 0.22) * 4) : 0;
-      camara(suave2(u), [1.5 + golpe, 2.1, 5.6], [0, 1.05, 0.6], [1.1 + golpe, 1.9, 5.0], [0, 1.05, 0.6]);
+      camara(suave2(u), [-1.5 + golpe, 0.85, 4.3], [0.3, 1.25, 0.6], [-1.2 + golpe, 0.9, 3.8], [0.35, 1.2, 0.6], 46);
+
+      frente(m.primeros.carton, 0.85, -1.15, 1.4, 0.8, 0.4);
       ver(m.archivero, 0.45, 0, 0.3);
       m.cajon.position.z = 0.85 * (1 - cierra);
       const cae = tramo(s, tI - 0.5, tI + 0.1);
@@ -266,7 +291,8 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
     // 10 — "Años después, el mundo entero se pasó a lo digital."
     case 10: {
       m.sets.calle.visible = true; luz("dia");
-      camara(suave2(u), [-1.0, 1.8, 8.6], [-0.4, 1.45, 0], [1.0, 1.7, 7.8], [0.4, 1.45, 0], 46);
+      camara(suave2(u), [-3.3, 0.85, 2.7], [0.1, 1.6, 0.1], [-2.7, 0.95, 3.1], [0.3, 1.6, 0.1], 48);
+      frente(m.primeros.hidrante, 0.66, -1.5, 1.0, 1, 0.3);
       m.gente.forEach((p, i) => {
         p.poner(-2.1 + i * 0.84, (i % 2) * -1.0 + 0.6); p.cara = i % 3 === 1 ? "risa" : "feliz";
         p.salto = Math.abs(Math.sin(s * 8 + i)) * 0.05;
@@ -293,11 +319,13 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
       m.rolloGigante.rotation.z = -0.35 * ladea;
       if (cae >= 1) { const k = tramo(s, tB + 0.35, tB + 0.95); if (k < 1) m.polvos.forEach((p, i) => { ver(p, (i - 2) * (0.9 + k), 0.4 + k * 0.6, -3.0, 1.2 + k); p.material.opacity = 1 - k; }); }
       if (n === 11) {
-        camara(suave2(u), [1.2, 2.6, 9.5], [0, 2.4, -6], [0.6, 2.2, 7.2], [0, 2.2, -6], 42);
+        camara(suave2(u), [-3.2, 0.7, 2.9], [-0.7, 2.0, -3.9], [-2.9, 0.75, 2.3], [-0.7, 1.9, -3.9], 44);
+        frente(m.primeros.hierba, 0.6, -1.35, 1.1, 0.7); m.look.foco = 4.6; m.look.apertura = 0.3;
         jefe.poner(-2.1, -1.0); jefe.cara = "triste"; jefe.mira = 0.7; jefe.brazo("i", 0.1, 0).brazo("d", 0.1, 0);
       } else {
         const tQ = P(12, "quebró");
-        camara(suave2(u), [0.7, 1.5, 7.2], [0.15, 1.3, 3], [0.3, 1.9, 9.2], [0, 1.7, 0], 40);
+        camara(suave2(u), [0.7, 0.75, 5.5], [0.05, 1.3, 3], [0.45, 0.5, 6.5], [0, 1.6, 3], 40);
+        frente(m.primeros.hierba, -0.7, -1.4, 1.1, 0.7); frente(m.primeros.hojas, 0.75, 0.8, 1.4, 1.2);
         steve.poner(0, 3); sostener(steve);
         steve.cara = s < tQ ? "neutral" : "triste"; steve.mira = s < tQ ? -0.5 : 0;   // al final mira a la cámara
       }

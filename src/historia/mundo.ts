@@ -348,6 +348,29 @@ export function crearMundo() {
     en(new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.28), luminoso(0x8fd0ff, 1.6)), 0, 0, 0.02, t); return t;
   });
 
+  // ------------------------------------------------------------------ PRIMER PLANO
+  // Cosas que se ponen muy cerca de la cámara, en una esquina del cuadro: salen borrosas y dan profundidad.
+  const libros = grupo(cosas);
+  [[0xe2574c, 0.1], [0x5d7bd6, -0.25], [0xf2b441, 0.3]].forEach(([col, giro], i) => { en(caja(0.34, 0.07, 0.25, col, 0.02), 0, 0.035 + i * 0.07, 0, libros).rotation.y = giro; });
+  en(cilindro(0.055, 0.045, 0.1, 0xfff8ef, 0.015, 12), 0.04, 0.26, 0, libros);
+  const rollosCerca = grupo(cosas);
+  en(rollo(0.085, 0.2), -0.1, 0.1, 0, rollosCerca);
+  en(acostado(rollo(0.085, 0.2), "z"), 0.13, 0.085, 0.05, rollosCerca).rotation.y = 0.5;
+  const hojasCerca = grupo(cosas);
+  for (const [x, y, r, col] of [[0, 0, 0.2, 0x3f9b4b], [0.22, 0.08, 0.15, 0x54b35c], [-0.2, 0.1, 0.14, 0x4aa855], [0.05, 0.2, 0.13, 0x58b862]] as const) en(roca(r, col, 0.02, { trama: "hojas" }, 1), x, y, 0, hojasCerca);
+  const hierbaCerca = grupo(cosas);
+  hierbaCerca.add(matas(16, 0.55, 0.25, 0x4fae4a, 31));
+  const sillaCerca = grupo(cosas);
+  en(caja(0.5, 0.75, 0.09, 0x7a2f3a, 0.025, { trama: "liso" }), 0, 0.375, 0, sillaCerca);
+  const cartonCerca = grupo(cosas);
+  en(caja(0.42, 0.3, 0.34, 0xc99a5b, 0.02, { trama: "carton" }), 0, 0.15, 0, cartonCerca);
+  en(caja(0.07, 0.305, 0.345, 0xe8d9b0, 0), 0, 0.15, 0, cartonCerca);
+  const hidranteCerca = grupo(cosas);
+  en(cilindro(0.1, 0.12, 0.42, 0xe2382c, 0.02, 12), 0, 0.21, 0, hidranteCerca);
+  en(esfera(0.1, 0xe2382c, 0.02), 0, 0.44, 0, hidranteCerca);
+  en(acostado(cilindro(0.045, 0.045, 0.3, 0xc7ccd4, 0.012, 10), "z"), 0, 0.28, 0, hidranteCerca);
+  const primeros = { libros, rollos: rollosCerca, hojas: hojasCerca, hierba: hierbaCerca, silla: sillaCerca, carton: cartonCerca, hidrante: hidranteCerca };
+
   // ------------------------------------------------------------------ efectos 2D
   const fx = grupo(escena);
   const destellos = Array.from({ length: 7 }, (_, i) => { const d = pegatinaEstrella(i ? "#fff6b0" : "#ffffff", 1); d.material.color.setScalar(2.2); fx.add(d); return d; });
@@ -372,7 +395,7 @@ export function crearMundo() {
 
   const sets = { lab, sala, fuera, calle, noche };
   const movibles: THREE.Object3D[] = [camara, chip, casete, tostadora, ...pilas, tele, archivero, candado, secreto, ...telefonos,
-    ...destellos, ...risas, ...polvos, kilos, contador.sprite, ...humos, ...monedas, ...cuernos];
+    ...destellos, ...risas, ...polvos, kilos, contador.sprite, ...humos, ...monedas, ...cuernos, ...Object.values(primeros)];
 
   /** Deja todo escondido y en su estado inicial. Se llama al empezar cada cuadro. */
   const reiniciar = () => {
@@ -395,6 +418,6 @@ export function crearMundo() {
   return { look, lucesNoche, luzLab, luzSala, luzMesa, foquitos, escena, ambiente, sol, foco, boveda, cielos, sets, actores, gente, todos, reiniciar, pantalla,
     camara, camPlacas, camLente, camCuerpo, chip, casete, tostadora, panes, pilas, tele, archivero, cajon, candado, secreto, telefonos,
     letreroFabrica, cerrado, rolloGigante, corona, humos, monedas, pedestal, cuernos, pila,
-    destellos, risas, polvos, kilos, contador };
+    destellos, risas, polvos, kilos, contador, primeros };
 }
 export type Mundo = ReturnType<typeof crearMundo>;

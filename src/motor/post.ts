@@ -91,7 +91,7 @@ export class Post {
     this.enfocada = new THREE.WebGLRenderTarget(w, h, hdr);
     this.b = [0, 1, 2, 3].map((i) => new THREE.WebGLRenderTarget(w >> (i < 2 ? 2 : 3), h >> (i < 2 ? 2 : 3), hdr));
     this.dof = pase(DOF, { tColor: this.escena.texture, tDepth: this.escena.depthTexture, near: 0.1, far: 200, foco: 6, apertura: 0.4,
-      maxPx: h * 0.011, px: new THREE.Vector2(1 / w, 1 / h) });
+      maxPx: h * 0.019, px: new THREE.Vector2(1 / w, 1 / h) });
     this.claro = pase(CLARO, { tColor: this.enfocada.texture, umbral: 1.0 });
     this.borroso = pase(BORROSO, { tColor: null, dir: new THREE.Vector2() });
     this.final = pase(FINAL, { tColor: this.enfocada.texture, tBrillo: this.b[2].texture, brillo: 0.7, saturacion: 1.15, exposicion: 1,
@@ -103,7 +103,7 @@ export class Post {
     gl.setRenderTarget(this.escena); gl.clear(); gl.render(escena, camara);
     Object.assign(u(this.dof), { near: { value: camara.near }, far: { value: camara.far }, foco: { value: look.foco }, apertura: { value: look.apertura } });
     u(this.dof).tColor.value = this.escena.texture; u(this.dof).tDepth.value = this.escena.depthTexture;
-    u(this.dof).maxPx.value = this.h * 0.011; u(this.dof).px.value.set(1 / this.w, 1 / this.h);
+    u(this.dof).maxPx.value = this.h * 0.019; u(this.dof).px.value.set(1 / this.w, 1 / this.h);
     gl.setRenderTarget(this.enfocada); this.dof.render(gl);
     gl.setRenderTarget(this.b[0]); this.claro.render(gl);
     // desenfocamos lo brillante dos veces: a 1/4 y a 1/8 del tamaño, horizontal y vertical
