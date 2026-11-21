@@ -1,0 +1,1086 @@
+{
+ "duracion": 57.048,
+ "lineas": [
+  {
+   "inicio": 0.0,
+   "fin": 4.026,
+   "texto": "Este ingeniero inventó la cámara digital… y su propia empresa la escondió."
+  },
+  {
+   "inicio": 4.026,
+   "fin": 10.973,
+   "texto": "Año 1975. Steve tiene 24 años y trabaja en Kodak, la reina de los rollos de fotos."
+  },
+  {
+   "inicio": 10.973,
+   "fin": 14.78,
+   "texto": "Su jefe le pasa un sensor nuevo y le dice: a ver qué haces con esto."
+  },
+  {
+   "inicio": 14.78,
+   "fin": 22.44,
+   "texto": "Steve arma un aparato del tamaño de una tostadora. Pesa casi 4 kilos, usa 16 pilas y guarda las fotos en un casete."
+  },
+  {
+   "inicio": 22.44,
+   "fin": 26.339,
+   "texto": "Toma su primera foto. Tarda 23 segundos en grabarse."
+  },
+  {
+   "inicio": 26.339,
+   "fin": 30.77,
+   "texto": "Y sale en blanco y negro, en un televisor, con apenas 100 por 100 puntitos."
+  },
+  {
+   "inicio": 30.77,
+   "fin": 36.117,
+   "texto": "Se la muestra a los jefes. Ellos se ríen: ¿quién va a querer ver sus fotos en una tele?"
+  },
+  {
+   "inicio": 36.117,
+   "fin": 39.265,
+   "texto": "Y le dicen: qué lindo… pero no se lo cuentes a nadie."
+  },
+  {
+   "inicio": 39.265,
+   "fin": 45.237,
+   "texto": "Fíjate: Kodak ganaba una fortuna vendiendo rollos. Una cámara sin rollo era su peor enemigo."
+  },
+  {
+   "inicio": 45.237,
+   "fin": 47.453,
+   "texto": "Así que guardaron el invento en un cajón."
+  },
+  {
+   "inicio": 47.453,
+   "fin": 50.547,
+   "texto": "Años después, el mundo entero se pasó a lo digital."
+  },
+  {
+   "inicio": 50.547,
+   "fin": 53.476,
+   "texto": "Y en 2012, Kodak se declaró en bancarrota."
+  },
+  {
+   "inicio": 53.476,
+   "fin": 56.548,
+   "texto": "La empresa que inventó el futuro… quebró por no usarlo."
+  }
+ ],
+ "palabras": [
+  {
+   "t": 0.094,
+   "d": 0.241,
+   "texto": "Este",
+   "linea": 0
+  },
+  {
+   "t": 0.346,
+   "d": 0.439,
+   "texto": "ingeniero",
+   "linea": 0
+  },
+  {
+   "t": 0.796,
+   "d": 0.373,
+   "texto": "inventó",
+   "linea": 0
+  },
+  {
+   "t": 1.179,
+   "d": 0.099,
+   "texto": "la",
+   "linea": 0
+  },
+  {
+   "t": 1.289,
+   "d": 0.307,
+   "texto": "cámara",
+   "linea": 0
+  },
+  {
+   "t": 1.607,
+   "d": 0.482,
+   "texto": "digital",
+   "linea": 0
+  },
+  {
+   "t": 2.353,
+   "d": 0.033,
+   "texto": "y",
+   "linea": 0
+  },
+  {
+   "t": 2.397,
+   "d": 0.143,
+   "texto": "su",
+   "linea": 0
+  },
+  {
+   "t": 2.55,
+   "d": 0.307,
+   "texto": "propia",
+   "linea": 0
+  },
+  {
+   "t": 2.868,
+   "d": 0.384,
+   "texto": "empresa",
+   "linea": 0
+  },
+  {
+   "t": 3.263,
+   "d": 0.077,
+   "texto": "la",
+   "linea": 0
+  },
+  {
+   "t": 3.35,
+   "d": 0.515,
+   "texto": "escondió",
+   "linea": 0
+  },
+  {
+   "t": 4.12,
+   "d": 0.241,
+   "texto": "Año",
+   "linea": 1
+  },
+  {
+   "t": 4.372,
+   "d": 1.491,
+   "texto": "1975",
+   "linea": 1
+  },
+  {
+   "t": 6.613,
+   "d": 0.395,
+   "texto": "Steve",
+   "linea": 1
+  },
+  {
+   "t": 7.019,
+   "d": 0.219,
+   "texto": "tiene",
+   "linea": 1
+  },
+  {
+   "t": 7.249,
+   "d": 0.888,
+   "texto": "24 años",
+   "linea": 1
+  },
+  {
+   "t": 8.149,
+   "d": 0.055,
+   "texto": "y",
+   "linea": 1
+  },
+  {
+   "t": 8.214,
+   "d": 0.34,
+   "texto": "trabaja",
+   "linea": 1
+  },
+  {
+   "t": 8.565,
+   "d": 0.088,
+   "texto": "en",
+   "linea": 1
+  },
+  {
+   "t": 8.664,
+   "d": 0.373,
+   "texto": "Kodak",
+   "linea": 1
+  },
+  {
+   "t": 9.3,
+   "d": 0.099,
+   "texto": "la",
+   "linea": 1
+  },
+  {
+   "t": 9.41,
+   "d": 0.285,
+   "texto": "reina",
+   "linea": 1
+  },
+  {
+   "t": 9.706,
+   "d": 0.11,
+   "texto": "de",
+   "linea": 1
+  },
+  {
+   "t": 9.826,
+   "d": 0.153,
+   "texto": "los",
+   "linea": 1
+  },
+  {
+   "t": 9.991,
+   "d": 0.274,
+   "texto": "rollos",
+   "linea": 1
+  },
+  {
+   "t": 10.276,
+   "d": 0.066,
+   "texto": "de",
+   "linea": 1
+  },
+  {
+   "t": 10.353,
+   "d": 0.461,
+   "texto": "fotos",
+   "linea": 1
+  },
+  {
+   "t": 11.067,
+   "d": 0.197,
+   "texto": "Su",
+   "linea": 2
+  },
+  {
+   "t": 11.275,
+   "d": 0.252,
+   "texto": "jefe",
+   "linea": 2
+  },
+  {
+   "t": 11.538,
+   "d": 0.099,
+   "texto": "le",
+   "linea": 2
+  },
+  {
+   "t": 11.648,
+   "d": 0.274,
+   "texto": "pasa",
+   "linea": 2
+  },
+  {
+   "t": 11.933,
+   "d": 0.11,
+   "texto": "un",
+   "linea": 2
+  },
+  {
+   "t": 12.054,
+   "d": 0.373,
+   "texto": "sensor",
+   "linea": 2
+  },
+  {
+   "t": 12.438,
+   "d": 0.296,
+   "texto": "nuevo",
+   "linea": 2
+  },
+  {
+   "t": 12.745,
+   "d": 0.055,
+   "texto": "y",
+   "linea": 2
+  },
+  {
+   "t": 12.81,
+   "d": 0.088,
+   "texto": "le",
+   "linea": 2
+  },
+  {
+   "t": 12.909,
+   "d": 0.318,
+   "texto": "dice",
+   "linea": 2
+  },
+  {
+   "t": 13.435,
+   "d": 0.077,
+   "texto": "a",
+   "linea": 2
+  },
+  {
+   "t": 13.523,
+   "d": 0.186,
+   "texto": "ver",
+   "linea": 2
+  },
+  {
+   "t": 13.72,
+   "d": 0.143,
+   "texto": "qué",
+   "linea": 2
+  },
+  {
+   "t": 13.874,
+   "d": 0.263,
+   "texto": "haces",
+   "linea": 2
+  },
+  {
+   "t": 14.148,
+   "d": 0.143,
+   "texto": "con",
+   "linea": 2
+  },
+  {
+   "t": 14.302,
+   "d": 0.318,
+   "texto": "esto",
+   "linea": 2
+  },
+  {
+   "t": 14.873,
+   "d": 0.329,
+   "texto": "Steve",
+   "linea": 3
+  },
+  {
+   "t": 15.213,
+   "d": 0.219,
+   "texto": "arma",
+   "linea": 3
+  },
+  {
+   "t": 15.444,
+   "d": 0.132,
+   "texto": "un",
+   "linea": 3
+  },
+  {
+   "t": 15.586,
+   "d": 0.395,
+   "texto": "aparato",
+   "linea": 3
+  },
+  {
+   "t": 15.992,
+   "d": 0.153,
+   "texto": "del",
+   "linea": 3
+  },
+  {
+   "t": 16.156,
+   "d": 0.362,
+   "texto": "tamaño",
+   "linea": 3
+  },
+  {
+   "t": 16.529,
+   "d": 0.099,
+   "texto": "de",
+   "linea": 3
+  },
+  {
+   "t": 16.639,
+   "d": 0.208,
+   "texto": "una",
+   "linea": 3
+  },
+  {
+   "t": 16.858,
+   "d": 0.559,
+   "texto": "tostadora",
+   "linea": 3
+  },
+  {
+   "t": 18.168,
+   "d": 0.263,
+   "texto": "Pesa",
+   "linea": 3
+  },
+  {
+   "t": 18.442,
+   "d": 0.274,
+   "texto": "casi",
+   "linea": 3
+  },
+  {
+   "t": 18.727,
+   "d": 0.647,
+   "texto": "4 kilos",
+   "linea": 3
+  },
+  {
+   "t": 19.648,
+   "d": 0.164,
+   "texto": "usa",
+   "linea": 3
+  },
+  {
+   "t": 19.823,
+   "d": 0.877,
+   "texto": "16 pilas",
+   "linea": 3
+  },
+  {
+   "t": 20.712,
+   "d": 0.033,
+   "texto": "y",
+   "linea": 3
+  },
+  {
+   "t": 20.755,
+   "d": 0.307,
+   "texto": "guarda",
+   "linea": 3
+  },
+  {
+   "t": 21.073,
+   "d": 0.153,
+   "texto": "las",
+   "linea": 3
+  },
+  {
+   "t": 21.238,
+   "d": 0.351,
+   "texto": "fotos",
+   "linea": 3
+  },
+  {
+   "t": 21.6,
+   "d": 0.099,
+   "texto": "en",
+   "linea": 3
+  },
+  {
+   "t": 21.709,
+   "d": 0.099,
+   "texto": "un",
+   "linea": 3
+  },
+  {
+   "t": 21.819,
+   "d": 0.461,
+   "texto": "casete",
+   "linea": 3
+  },
+  {
+   "t": 22.533,
+   "d": 0.23,
+   "texto": "Toma",
+   "linea": 4
+  },
+  {
+   "t": 22.775,
+   "d": 0.132,
+   "texto": "su",
+   "linea": 4
+  },
+  {
+   "t": 22.917,
+   "d": 0.34,
+   "texto": "primera",
+   "linea": 4
+  },
+  {
+   "t": 23.268,
+   "d": 0.34,
+   "texto": "foto",
+   "linea": 4
+  },
+  {
+   "t": 24.358,
+   "d": 0.263,
+   "texto": "Tarda",
+   "linea": 4
+  },
+  {
+   "t": 24.633,
+   "d": 0.943,
+   "texto": "23 segundos",
+   "linea": 4
+  },
+  {
+   "t": 25.586,
+   "d": 0.077,
+   "texto": "en",
+   "linea": 4
+  },
+  {
+   "t": 25.674,
+   "d": 0.504,
+   "texto": "grabarse",
+   "linea": 4
+  },
+  {
+   "t": 26.432,
+   "d": 0.11,
+   "texto": "Y",
+   "linea": 5
+  },
+  {
+   "t": 26.553,
+   "d": 0.274,
+   "texto": "sale",
+   "linea": 5
+  },
+  {
+   "t": 26.838,
+   "d": 0.088,
+   "texto": "en",
+   "linea": 5
+  },
+  {
+   "t": 26.937,
+   "d": 0.296,
+   "texto": "blanco",
+   "linea": 5
+  },
+  {
+   "t": 27.244,
+   "d": 0.033,
+   "texto": "y",
+   "linea": 5
+  },
+  {
+   "t": 27.288,
+   "d": 0.351,
+   "texto": "negro",
+   "linea": 5
+  },
+  {
+   "t": 27.836,
+   "d": 0.132,
+   "texto": "en",
+   "linea": 5
+  },
+  {
+   "t": 27.979,
+   "d": 0.11,
+   "texto": "un",
+   "linea": 5
+  },
+  {
+   "t": 28.099,
+   "d": 0.537,
+   "texto": "televisor",
+   "linea": 5
+  },
+  {
+   "t": 28.867,
+   "d": 0.153,
+   "texto": "con",
+   "linea": 5
+  },
+  {
+   "t": 29.031,
+   "d": 0.318,
+   "texto": "apenas",
+   "linea": 5
+  },
+  {
+   "t": 29.36,
+   "d": 0.219,
+   "texto": "100",
+   "linea": 5
+  },
+  {
+   "t": 29.59,
+   "d": 0.153,
+   "texto": "por",
+   "linea": 5
+  },
+  {
+   "t": 29.755,
+   "d": 0.855,
+   "texto": "100 puntitos",
+   "linea": 5
+  },
+  {
+   "t": 30.864,
+   "d": 0.208,
+   "texto": "Se",
+   "linea": 6
+  },
+  {
+   "t": 31.083,
+   "d": 0.077,
+   "texto": "la",
+   "linea": 6
+  },
+  {
+   "t": 31.171,
+   "d": 0.362,
+   "texto": "muestra",
+   "linea": 6
+  },
+  {
+   "t": 31.544,
+   "d": 0.022,
+   "texto": "a",
+   "linea": 6
+  },
+  {
+   "t": 31.577,
+   "d": 0.153,
+   "texto": "los",
+   "linea": 6
+  },
+  {
+   "t": 31.741,
+   "d": 0.461,
+   "texto": "jefes",
+   "linea": 6
+  },
+  {
+   "t": 32.952,
+   "d": 0.263,
+   "texto": "Ellos",
+   "linea": 6
+  },
+  {
+   "t": 33.226,
+   "d": 0.088,
+   "texto": "se",
+   "linea": 6
+  },
+  {
+   "t": 33.325,
+   "d": 0.329,
+   "texto": "ríen",
+   "linea": 6
+  },
+  {
+   "t": 33.928,
+   "d": 0.197,
+   "texto": "quién",
+   "linea": 6
+  },
+  {
+   "t": 34.136,
+   "d": 0.121,
+   "texto": "va",
+   "linea": 6
+  },
+  {
+   "t": 34.268,
+   "d": 0.044,
+   "texto": "a",
+   "linea": 6
+  },
+  {
+   "t": 34.323,
+   "d": 0.285,
+   "texto": "querer",
+   "linea": 6
+  },
+  {
+   "t": 34.619,
+   "d": 0.153,
+   "texto": "ver",
+   "linea": 6
+  },
+  {
+   "t": 34.783,
+   "d": 0.175,
+   "texto": "sus",
+   "linea": 6
+  },
+  {
+   "t": 34.97,
+   "d": 0.362,
+   "texto": "fotos",
+   "linea": 6
+  },
+  {
+   "t": 35.342,
+   "d": 0.088,
+   "texto": "en",
+   "linea": 6
+  },
+  {
+   "t": 35.441,
+   "d": 0.164,
+   "texto": "una",
+   "linea": 6
+  },
+  {
+   "t": 35.617,
+   "d": 0.34,
+   "texto": "tele",
+   "linea": 6
+  },
+  {
+   "t": 36.21,
+   "d": 0.121,
+   "texto": "Y",
+   "linea": 7
+  },
+  {
+   "t": 36.342,
+   "d": 0.088,
+   "texto": "le",
+   "linea": 7
+  },
+  {
+   "t": 36.441,
+   "d": 0.373,
+   "texto": "dicen",
+   "linea": 7
+  },
+  {
+   "t": 37.066,
+   "d": 0.099,
+   "texto": "qué",
+   "linea": 7
+  },
+  {
+   "t": 37.175,
+   "d": 0.351,
+   "texto": "lindo",
+   "linea": 7
+  },
+  {
+   "t": 37.767,
+   "d": 0.175,
+   "texto": "pero",
+   "linea": 7
+  },
+  {
+   "t": 37.954,
+   "d": 0.132,
+   "texto": "no",
+   "linea": 7
+  },
+  {
+   "t": 38.096,
+   "d": 0.121,
+   "texto": "se",
+   "linea": 7
+  },
+  {
+   "t": 38.228,
+   "d": 0.088,
+   "texto": "lo",
+   "linea": 7
+  },
+  {
+   "t": 38.327,
+   "d": 0.362,
+   "texto": "cuentes",
+   "linea": 7
+  },
+  {
+   "t": 38.699,
+   "d": 0.044,
+   "texto": "a",
+   "linea": 7
+  },
+  {
+   "t": 38.754,
+   "d": 0.351,
+   "texto": "nadie",
+   "linea": 7
+  },
+  {
+   "t": 39.359,
+   "d": 0.482,
+   "texto": "Fíjate",
+   "linea": 8
+  },
+  {
+   "t": 40.072,
+   "d": 0.274,
+   "texto": "Kodak",
+   "linea": 8
+  },
+  {
+   "t": 40.357,
+   "d": 0.329,
+   "texto": "ganaba",
+   "linea": 8
+  },
+  {
+   "t": 40.697,
+   "d": 0.175,
+   "texto": "una",
+   "linea": 8
+  },
+  {
+   "t": 40.883,
+   "d": 0.373,
+   "texto": "fortuna",
+   "linea": 8
+  },
+  {
+   "t": 41.267,
+   "d": 0.45,
+   "texto": "vendiendo",
+   "linea": 8
+  },
+  {
+   "t": 41.727,
+   "d": 0.493,
+   "texto": "rollos",
+   "linea": 8
+  },
+  {
+   "t": 42.971,
+   "d": 0.197,
+   "texto": "Una",
+   "linea": 8
+  },
+  {
+   "t": 43.18,
+   "d": 0.329,
+   "texto": "cámara",
+   "linea": 8
+  },
+  {
+   "t": 43.519,
+   "d": 0.197,
+   "texto": "sin",
+   "linea": 8
+  },
+  {
+   "t": 43.728,
+   "d": 0.296,
+   "texto": "rollo",
+   "linea": 8
+  },
+  {
+   "t": 44.035,
+   "d": 0.153,
+   "texto": "era",
+   "linea": 8
+  },
+  {
+   "t": 44.199,
+   "d": 0.121,
+   "texto": "su",
+   "linea": 8
+  },
+  {
+   "t": 44.331,
+   "d": 0.263,
+   "texto": "peor",
+   "linea": 8
+  },
+  {
+   "t": 44.605,
+   "d": 0.471,
+   "texto": "enemigo",
+   "linea": 8
+  },
+  {
+   "t": 45.33,
+   "d": 0.296,
+   "texto": "Así",
+   "linea": 9
+  },
+  {
+   "t": 45.637,
+   "d": 0.099,
+   "texto": "que",
+   "linea": 9
+  },
+  {
+   "t": 45.747,
+   "d": 0.461,
+   "texto": "guardaron",
+   "linea": 9
+  },
+  {
+   "t": 46.219,
+   "d": 0.099,
+   "texto": "el",
+   "linea": 9
+  },
+  {
+   "t": 46.328,
+   "d": 0.362,
+   "texto": "invento",
+   "linea": 9
+  },
+  {
+   "t": 46.701,
+   "d": 0.066,
+   "texto": "en",
+   "linea": 9
+  },
+  {
+   "t": 46.778,
+   "d": 0.099,
+   "texto": "un",
+   "linea": 9
+  },
+  {
+   "t": 46.887,
+   "d": 0.406,
+   "texto": "cajón",
+   "linea": 9
+  },
+  {
+   "t": 47.547,
+   "d": 0.318,
+   "texto": "Años",
+   "linea": 10
+  },
+  {
+   "t": 47.876,
+   "d": 0.439,
+   "texto": "después",
+   "linea": 10
+  },
+  {
+   "t": 48.556,
+   "d": 0.132,
+   "texto": "el",
+   "linea": 10
+  },
+  {
+   "t": 48.698,
+   "d": 0.23,
+   "texto": "mundo",
+   "linea": 10
+  },
+  {
+   "t": 48.94,
+   "d": 0.34,
+   "texto": "entero",
+   "linea": 10
+  },
+  {
+   "t": 49.29,
+   "d": 0.132,
+   "texto": "se",
+   "linea": 10
+  },
+  {
+   "t": 49.433,
+   "d": 0.285,
+   "texto": "pasó",
+   "linea": 10
+  },
+  {
+   "t": 49.729,
+   "d": 0.033,
+   "texto": "a",
+   "linea": 10
+  },
+  {
+   "t": 49.773,
+   "d": 0.088,
+   "texto": "lo",
+   "linea": 10
+  },
+  {
+   "t": 49.872,
+   "d": 0.515,
+   "texto": "digital",
+   "linea": 10
+  },
+  {
+   "t": 50.641,
+   "d": 0.153,
+   "texto": "Y",
+   "linea": 11
+  },
+  {
+   "t": 50.805,
+   "d": 0.088,
+   "texto": "en",
+   "linea": 11
+  },
+  {
+   "t": 50.904,
+   "d": 0.658,
+   "texto": "2012",
+   "linea": 11
+  },
+  {
+   "t": 51.792,
+   "d": 0.285,
+   "texto": "Kodak",
+   "linea": 11
+  },
+  {
+   "t": 52.088,
+   "d": 0.121,
+   "texto": "se",
+   "linea": 11
+  },
+  {
+   "t": 52.22,
+   "d": 0.373,
+   "texto": "declaró",
+   "linea": 11
+  },
+  {
+   "t": 52.603,
+   "d": 0.077,
+   "texto": "en",
+   "linea": 11
+  },
+  {
+   "t": 52.691,
+   "d": 0.625,
+   "texto": "bancarrota",
+   "linea": 11
+  },
+  {
+   "t": 53.57,
+   "d": 0.132,
+   "texto": "La",
+   "linea": 12
+  },
+  {
+   "t": 53.713,
+   "d": 0.362,
+   "texto": "empresa",
+   "linea": 12
+  },
+  {
+   "t": 54.085,
+   "d": 0.099,
+   "texto": "que",
+   "linea": 12
+  },
+  {
+   "t": 54.195,
+   "d": 0.373,
+   "texto": "inventó",
+   "linea": 12
+  },
+  {
+   "t": 54.579,
+   "d": 0.066,
+   "texto": "el",
+   "linea": 12
+  },
+  {
+   "t": 54.656,
+   "d": 0.428,
+   "texto": "futuro",
+   "linea": 12
+  },
+  {
+   "t": 55.313,
+   "d": 0.274,
+   "texto": "quebró",
+   "linea": 12
+  },
+  {
+   "t": 55.599,
+   "d": 0.186,
+   "texto": "por",
+   "linea": 12
+  },
+  {
+   "t": 55.796,
+   "d": 0.121,
+   "texto": "no",
+   "linea": 12
+  },
+  {
+   "t": 55.927,
+   "d": 0.461,
+   "texto": "usarlo",
+   "linea": 12
+  }
+ ]
+}

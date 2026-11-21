@@ -1,0 +1,32 @@
+{
+  "name": "stickman3d",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Shorts animados: personajes 2D en un mundo 3D, hechos con código (three.js + Remotion)",
+  "scripts": {
+    "voz": "python3 scripts/voz.py",
+    "musica": "python3 scripts/musica.py",
+    "estudio": "remotion studio src/index.ts",
+    "foto": "node scripts/fotos.mjs",
+    "video": "remotion render src/index.ts Short out/video.mp4 --crf 18",
+    "video:servidor": "remotion render src/index.ts Short out/video.mp4 --crf 18 --gl=swangle"
+  },
+  "dependencies": {
+    "@fontsource/montserrat": "^5.3.0",
+    "@react-three/fiber": "^9.8.2",
+    "@remotion/cli": "^4.0.545",
+    "@remotion/three": "^4.0.545",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "remotion": "^4.0.545",
+    "three": "^0.187.0",
+    "@remotion/bundler": "^4.0.545",
+    "@remotion/renderer": "^4.0.545"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/three": "^0.187.0",
+    "typescript": "^7.0.2"
+  }
+}
