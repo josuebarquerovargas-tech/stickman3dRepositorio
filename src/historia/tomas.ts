@@ -30,6 +30,7 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
   const { steve, jefe, jefe2, jefe3, ayudante } = m.actores;
   m.reiniciar();
   Personaje.camara = cam;
+  Object.assign(m.look, { apertura: 0.45, exposicion: 1 });
 
   // --- ayudas -------------------------------------------------------------
   /** Coloca la cámara: va de (pos0, mira0) a (pos1, mira1) según u. */
@@ -37,15 +38,27 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
     cam.position.lerpVectors(v(pos0), v(pos1), u);
     cam.lookAt(v(mira0).lerp(v(mira1), u));
     cam.fov = fov; cam.updateProjectionMatrix(); cam.updateMatrixWorld();
+    m.look.foco = cam.position.distanceTo(v(mira0).lerp(v(mira1), u));   // enfoca a lo que mira
   };
-  /** Ambiente de luz. */
+  /** Ambiente de luz, niebla y color de cada tipo de escena. */
   const luz = (tipo: "dia" | "interior" | "drama" | "noche" | "gris") => {
-    const t = { dia: [1.5, 2.4, 0xfff1dd, "dia"], interior: [1.7, 1.7, 0xfff0d8, "dia"], drama: [0.7, 1.3, 0xb9a8ff, "noche"],
-      noche: [1.0, 1.5, 0xaab4ff, "noche"], gris: [1.25, 0.9, 0xcfd6e6, "gris"] }[tipo] as [number, number, number, "dia" | "gris" | "noche"];
+    const t = {
+      //         ambiente, sol, color del sol, cielo, tinte personajes, niebla, [color final], saturación, brillo
+      dia:      [1.35, 2.6, 0xfff0d0, "dia",   0xffffff, 0xcfeaff, [1.03, 1.0, 0.96], 1.2, 0.7],
+      interior: [0.78, 1.05, 0xffe9c8, "dia",   0xfff4e6, 0xcfeaff, [1.03, 1.0, 0.95], 1.12, 0.8],
+      drama:    [0.42, 0.75, 0x9a8cff, "noche", 0xcbc4ea, 0x2a2f7a, [0.92, 0.92, 1.12], 1.1, 1.2],
+      noche:    [0.55, 0.9, 0x8f9cff, "noche", 0xdfdff6, 0x2a2f7a, [0.95, 0.95, 1.1], 1.25, 1.3],
+      gris:     [1.0, 0.8, 0xcfd6e6, "gris",  0xd2d5dc, 0xb7b9bd, [0.97, 0.99, 1.04], 0.72, 0.5],
+    }[tipo] as [number, number, number, "dia" | "gris" | "noche", number, number, [number, number, number], number, number];
     m.ambiente.intensity = t[0]; m.sol.intensity = t[1]; m.sol.color.set(t[2]);
     (m.boveda.material as THREE.MeshBasicMaterial).map = m.cielos[t[3]];
-    const tinte = tipo === "drama" ? 0xb4a8d8 : tipo === "noche" ? 0xc4c8f0 : tipo === "gris" ? 0xd6d8de : 0xffffff;
-    m.todos.forEach((p) => p.tinte(tinte));
+    m.todos.forEach((p) => p.tinte(t[4]));
+    (m.escena.fog as THREE.Fog).color.set(t[5]);
+    m.look.tinte = t[6]; m.look.saturacion = t[7]; m.look.brillo = t[8];
+    m.lucesNoche.visible = t[3] === "noche";
+    const apagado = tipo === "drama" ? 0.35 : 1;
+    m.luzLab.intensity = 11 * apagado; m.luzSala.intensity = 12 * apagado; m.luzMesa.intensity = 7;
+    m.foquitos.forEach((f, i) => (f.visible = Math.sin(s * (3 + (i % 5)) + i * 1.7) > -0.3));   // foquitos que parpadean
   };
   const ver = (o: THREE.Object3D, x: number, y: number, z: number, escala = 1) => { o.visible = true; o.position.set(x, y, z); o.scale.setScalar(escala); return o; };
   const hablar = (p: Personaje, desde: number, hasta: number) => { if (s > desde && s < hasta) p.habla = Math.abs(Math.sin(s * 13)) * 0.9; };

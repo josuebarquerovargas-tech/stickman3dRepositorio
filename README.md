@@ -14,6 +14,14 @@ Corto incluido: **"El invento que Kodak escondió"** (~57 s).
 | **edge-tts** o **ElevenLabs** (Python) | Crea la voz y dice en qué segundo cae cada palabra | `scripts/voz.py` |
 | **numpy** (Python) | Crea la música y los efectos de sonido | `scripts/musica.py` |
 
+Qué le da el aspecto "de calidad" (todo está en `src/motor/`):
+
+- **Texturas pintadas** (`formas.ts` → `pintura`): madera, ladrillo, baldosa, hojas, pasto... se dibujan por código.
+- **Contorno de tinta** en cada pieza 3D y **sombras reales**, también las de los personajes.
+- **Personajes con ropa y sombreado** (`personaje.ts`): suéter, saco, bata, sudadera.
+- **"Revelado" de la imagen** (`post.ts`): desenfoque de lente, resplandor de luces, color, viñeta y grano.
+- **Relleno del mundo**: matas de pasto, piedras, cerros, estrellas, lámparas que iluminan.
+
 La idea clave: **el video es una función del tiempo**. Para cada cuadro, el código pregunta
 "¿en qué segundo voy?" y coloca la cámara, los personajes y los objetos donde toca.
 
@@ -60,8 +68,9 @@ src/
     mundo.ts       <- escenarios, objetos y actores (se construyen una vez)
     tomas.ts       <- la "dirección": qué pasa en cada frase (cámara, poses, efectos)
   motor/
-    formas.ts      <- cajas, cilindros, carteles... con contorno de tinta
-    personaje.ts   <- el monito 2D: caras, brazos, caminar
+    formas.ts      <- cajas, cilindros, carteles, texturas pintadas, pasto, estrellas
+    personaje.ts   <- el monito 2D: caras, ropa, brazos, caminar
+    post.ts        <- desenfoque de lente, resplandor y color final
     util.ts        <- matemáticas para animar (suavizar, rebotar...)
   Subtitulos.tsx   <- subtítulos de 1 o 2 palabras
   Short.tsx        <- junta todo: 3D + subtítulos + audio
@@ -76,8 +85,10 @@ scripts/
 2. **Genera la voz**: `npm run voz`. Para cambiar de voz edita `VOZ` en `scripts/voz.py`
    (lista de voces: `edge-tts --list-voices | grep es-`).
 3. **Construye lo que se ve** en `mundo.ts`: escenarios y objetos con `caja(...)`, `cilindro(...)`, `cartel(...)`.
+   Para que se vea pintado, pasa una trama: `caja(3, 0.1, 1, 0x9a6a44, 0.035, { trama: "madera" })`.
 4. **Dirige cada frase** en `tomas.ts`. Hay un `case` por frase. Dentro usas:
-   - `camara(u, desde, miraA, hasta, miraA2)` para mover la cámara.
+   - `luz("dia" | "interior" | "drama" | "noche" | "gris")` para el ambiente.
+   - `camara(u, desde, miraA, hasta, miraA2)` para mover la cámara (enfoca sola a lo que mira).
    - `personaje.poner(x, z)`, `.cara = "feliz"`, `.brazo("d", ángulo)`, `.alcanzar(...)`.
    - `P(frase, "palabra")` para saber en qué segundo se dice una palabra y sincronizar una acción con ella.
 5. **Mira fotos de prueba** con `node scripts/fotos.mjs` y ajusta.

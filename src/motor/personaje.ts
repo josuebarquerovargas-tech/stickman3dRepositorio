@@ -9,6 +9,10 @@ export interface Aspecto {
   pelo: "lado" | "calvo" | "mono" | "corto";
   colorPelo: string;
   gafas?: boolean; bigote?: boolean; corbata?: string;
+  ropa?: "sueter" | "saco" | "bata" | "camiseta" | "sudadera";   // tipo de prenda (detalles dibujados encima)
+  detalle?: string;      // color secundario de la prenda
+  zapatos?: string;
+  plumas?: boolean;      // bolsillo con plumas (¡ingeniero!)
 }
 type Punto = [number, number];
 
@@ -46,11 +50,14 @@ export class Personaje {
     const [c, g] = lienzo(T * ESCALA, T * ESCALA);
     this.g = g;
     this.tex = textura(c);
-    const mat = new THREE.MeshBasicMaterial({ map: this.tex, transparent: true, depthWrite: false, side: THREE.DoubleSide });
+    const mat = new THREE.MeshBasicMaterial({ map: this.tex, alphaTest: 0.5, alphaToCoverage: true, side: THREE.DoubleSide });
     this.lamina = new THREE.Mesh(new THREE.PlaneGeometry(T / PPU, T / PPU), mat);
     this.lamina.position.y = T / PPU / 2 - (T - SUELO) / PPU;
-    this.sombra = new THREE.Mesh(new THREE.CircleGeometry(0.42, 24),
-      new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false }));
+    // sombra real en el suelo, con la silueta del dibujo
+    this.lamina.castShadow = true;
+    this.lamina.customDepthMaterial = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: this.tex, alphaTest: 0.5 });
+    this.sombra = new THREE.Mesh(new THREE.CircleGeometry(0.3, 24),
+      new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.22, depthWrite: false }));
     this.sombra.rotation.x = -Math.PI / 2;
     this.sombra.position.y = 0.02;
     this.grupo.add(this.sombra, this.lamina);
@@ -132,85 +139,135 @@ export class Personaje {
 
   // ------------------------------------------------------------------ dibujo
   private dibujar(parpadeo: boolean) {
-    const g = this.g, a = this.a;
+    const g = this.g, a = this.a, det = a.detalle ?? "#fff8ef";
     g.setTransform(ESCALA, 0, 0, ESCALA, 0, 0);
     g.clearRect(0, 0, T, T);
     g.lineCap = "round"; g.lineJoin = "round"; g.strokeStyle = LINEA;
+    /** Sombreado suave: oscurece un lado de la figura que se acaba de recortar con clip(). */
+    const sombrear = (x: number, y: number, rad: number) => {
+      const gr = g.createRadialGradient(x - rad * 0.35, y - rad * 0.4, rad * 0.3, x, y, rad * 1.25);
+      gr.addColorStop(0, "rgba(255,255,255,0.10)"); gr.addColorStop(0.55, "rgba(90,60,120,0)"); gr.addColorStop(1, "rgba(70,40,110,0.34)");
+      g.fillStyle = gr; g.fillRect(0, 0, T, T);
+    };
 
-    // piernas
+    // piernas y zapatos
     const zanca = Math.sin(this.paso) * 34;
     for (const s of [-1, 1]) {
       const px = CX + s * 26 + s * zanca;
-      const py = SUELO - 6 - Math.max(0, Math.sin(this.paso) * s) * 16;
-      g.lineWidth = 12; g.beginPath(); g.moveTo(CX + s * 26, 540); g.lineTo(px, py); g.stroke();
-      g.fillStyle = LINEA; g.beginPath(); g.ellipse(px + 9, py, 24, 11, 0, 0, 7); g.fill();
+      const py = SUELO - 8 - Math.max(0, Math.sin(this.paso) * s) * 16;
+      g.strokeStyle = LINEA; g.lineWidth = 13; g.beginPath(); g.moveTo(CX + s * 26, 540); g.lineTo(px, py); g.stroke();
+      g.lineWidth = 6; g.fillStyle = a.zapatos ?? "#4a3326";
+      g.beginPath(); g.moveTo(px - 12, py - 12); g.quadraticCurveTo(px + 34, py - 16, px + 36, py + 6); g.lineTo(px - 12, py + 6); g.closePath(); g.fill(); g.stroke();
     }
 
     // lo demás se inclina junto (cuerpo, brazos y cabeza)
     g.save();
     g.translate(CX, 545); g.rotate(this.inclina); g.translate(-CX, -545);
 
-    // cuerpo en forma de frijol
-    g.lineWidth = 9;
-    g.beginPath(); g.ellipse(CX, 442, 86, 116, 0, 0, 7);
-    g.fillStyle = a.camisa; g.fill();
-    g.save(); g.clip(); g.fillStyle = a.pantalon; g.fillRect(0, 520, T, 100); g.restore();
-    if (a.corbata) {
-      g.fillStyle = a.corbata; g.beginPath();
-      g.moveTo(CX - 14, 332); g.lineTo(CX + 14, 332); g.lineTo(CX + 20, 450); g.lineTo(CX, 478); g.lineTo(CX - 20, 450); g.closePath(); g.fill();
-      g.lineWidth = 6; g.stroke(); g.lineWidth = 9;
+    // ---- cuerpo en forma de frijol, con su ropa
+    const frijol = () => { g.beginPath(); g.ellipse(CX, 442, 88, 118, 0, 0, 7); };
+    g.lineWidth = 10; frijol(); g.fillStyle = a.camisa; g.fill();
+    g.save(); frijol(); g.clip();
+    g.fillStyle = a.pantalon; g.fillRect(0, 522, T, 100);                               // pantalón
+    g.strokeStyle = "rgba(40,20,15,0.55)"; g.lineWidth = 5; g.beginPath(); g.moveTo(CX - 100, 522); g.lineTo(CX + 100, 522); g.stroke();
+    const ropa = a.ropa ?? "camiseta";
+    g.strokeStyle = LINEA; g.lineWidth = 5;
+    if (ropa === "sueter") {
+      g.fillStyle = "#fff8ef"; g.beginPath(); g.moveTo(CX - 40, 318); g.lineTo(CX, 388); g.lineTo(CX + 40, 318); g.closePath(); g.fill(); g.stroke();   // cuello en V
+      g.fillStyle = det;                                                              // rombos
+      for (const dx of [-52, 0, 52]) { g.beginPath(); g.moveTo(CX + dx, 448); g.lineTo(CX + dx + 20, 476); g.lineTo(CX + dx, 504); g.lineTo(CX + dx - 20, 476); g.closePath(); g.fill(); }
+      g.lineWidth = 3; g.strokeStyle = "rgba(40,20,15,0.45)"; for (let x = CX - 80; x <= CX + 80; x += 14) { g.beginPath(); g.moveTo(x, 508); g.lineTo(x, 521); g.stroke(); }   // resorte
+    } else if (ropa === "saco") {
+      g.fillStyle = "#fff8ef"; g.beginPath(); g.moveTo(CX - 34, 318); g.lineTo(CX, 470); g.lineTo(CX + 34, 318); g.closePath(); g.fill();                // camisa
+      if (a.corbata) { g.fillStyle = a.corbata; g.beginPath(); g.moveTo(CX - 12, 330); g.lineTo(CX + 12, 330); g.lineTo(CX + 17, 430); g.lineTo(CX, 456); g.lineTo(CX - 17, 430); g.closePath(); g.fill(); g.stroke(); }
+      g.fillStyle = det;                                                              // solapas
+      for (const s of [-1, 1]) { g.beginPath(); g.moveTo(CX + s * 34, 318); g.lineTo(CX + s * 4, 468); g.lineTo(CX + s * 58, 400); g.closePath(); g.fill(); g.stroke(); }
+      g.fillStyle = LINEA; for (const y of [488, 510]) { g.beginPath(); g.arc(CX + 6, y, 5, 0, 7); g.fill(); }                                          // botones
+      g.fillStyle = "#fff8ef"; g.fillRect(CX + 40, 404, 24, 9);                         // pañuelo
+    } else if (ropa === "bata") {
+      g.fillStyle = det; g.beginPath(); g.moveTo(CX - 30, 318); g.lineTo(CX, 380); g.lineTo(CX + 30, 318); g.closePath(); g.fill(); g.stroke();          // blusa
+      g.beginPath(); g.moveTo(CX, 380); g.lineTo(CX, 560); g.stroke();
+      for (const s of [-1, 1]) { g.fillStyle = "#ffffff"; g.beginPath(); g.moveTo(CX + s * 30, 318); g.lineTo(CX, 380); g.lineTo(CX + s * 50, 372); g.closePath(); g.fill(); g.stroke(); }
+      g.strokeRect(CX + 26, 440, 36, 40);
+      g.fillStyle = LINEA; for (const y of [410, 450, 490]) { g.beginPath(); g.arc(CX - 12, y, 4.5, 0, 7); g.fill(); }
+    } else if (ropa === "sudadera") {
+      g.beginPath(); g.arc(CX, 318, 34, 0.15, Math.PI - 0.15); g.stroke();
+      for (const s of [-1, 1]) { g.beginPath(); g.moveTo(CX + s * 14, 350); g.lineTo(CX + s * 16, 398); g.stroke(); }
+      g.fillStyle = "rgba(0,0,0,0.14)"; g.beginPath(); g.moveTo(CX - 50, 460); g.lineTo(CX + 50, 460); g.lineTo(CX + 62, 512); g.lineTo(CX - 62, 512); g.closePath(); g.fill(); g.stroke();
+    } else {
+      g.beginPath(); g.arc(CX, 322, 30, 0.2, Math.PI - 0.2); g.stroke();
+      g.fillStyle = det; g.beginPath(); g.arc(CX, 430, 26, 0, 7); g.fill();             // estampado
     }
-    g.beginPath(); g.ellipse(CX, 442, 86, 116, 0, 0, 7); g.stroke();
+    if (a.plumas) {
+      g.lineWidth = 4; g.strokeStyle = LINEA; g.fillStyle = "#fff8ef"; g.fillRect(CX + 22, 398, 34, 30); g.strokeRect(CX + 22, 398, 34, 30);
+      for (const [dx, col] of [[30, "#2f6fd6"], [40, "#d9482f"], [50, "#2b2b33"]] as const) { g.strokeStyle = col; g.lineWidth = 5; g.beginPath(); g.moveTo(CX + dx, 384); g.lineTo(CX + dx, 404); g.stroke(); }
+    }
+    sombrear(CX, 442, 118);
+    g.restore();
+    g.strokeStyle = LINEA; g.lineWidth = 10; frijol(); g.stroke();
 
     // brazos (líneas) y manos (bolitas). Si la mano sube hasta la cara, ese brazo se dibuja al final,
     // encima de la cabeza (por ejemplo, el dedo en la boca).
     const brazo = (lado: "i" | "d") => {
       const s = lado === "i" ? -1 : 1;
       const [ex, ey] = this.codo[lado], [mx, my] = this.manoP[lado];
-      g.strokeStyle = LINEA; g.lineWidth = 12; g.beginPath(); g.moveTo(CX + s * HOMBRO_X, HOMBRO_Y); g.lineTo(ex, ey); g.lineTo(mx, my); g.stroke();
-      g.lineWidth = 7; g.fillStyle = PIEL; g.beginPath(); g.arc(mx, my, 15, 0, 7); g.fill(); g.stroke();
+      g.strokeStyle = LINEA; g.lineWidth = 13; g.beginPath(); g.moveTo(CX + s * HOMBRO_X, HOMBRO_Y); g.lineTo(ex, ey); g.lineTo(mx, my); g.stroke();
+      g.lineWidth = 7; g.fillStyle = PIEL; g.beginPath(); g.arc(mx, my, 16, 0, 7); g.fill(); g.stroke();
     };
     const sobreLaCara = (lado: "i" | "d") => this.manoP[lado][1] < 330 && Math.abs(this.manoP[lado][0] - CX) < 125;
     for (const lado of ["i", "d"] as const) if (!sobreLaCara(lado)) brazo(lado);
 
-    // cabeza
+    // ---- cabeza
     const hx = CX, hy = 206, R = 118, m = this.mira;
-    if (a.pelo === "mono") { g.lineWidth = 9; g.fillStyle = a.colorPelo; g.beginPath(); g.arc(hx, hy - R - 22, 44, 0, 7); g.fill(); g.stroke(); }
-    g.lineWidth = 9; g.fillStyle = PIEL; g.beginPath(); g.arc(hx, hy, R, 0, 7); g.fill();
-    g.save(); g.clip(); g.fillStyle = a.colorPelo;
-    if (a.pelo === "lado") { g.beginPath(); g.ellipse(hx - 34, hy - 104, 150, 74, -0.18, 0, 7); g.fill(); g.beginPath(); g.ellipse(hx - R, hy - 30, 34, 74, 0, 0, 7); g.fill(); }
-    if (a.pelo === "corto") { g.beginPath(); g.ellipse(hx, hy - 112, 140, 62, 0, 0, 7); g.fill(); }
-    if (a.pelo === "mono") { g.beginPath(); g.ellipse(hx, hy - 104, 150, 70, 0, 0, 7); g.fill(); }
+    const oscuro = new THREE.Color(a.colorPelo).multiplyScalar(0.5).getStyle();
+    if (a.pelo === "mono") { g.lineWidth = 10; g.fillStyle = a.colorPelo; g.beginPath(); g.arc(hx, hy - R - 22, 44, 0, 7); g.fill(); g.stroke(); }
+    g.lineWidth = 10; g.fillStyle = PIEL; g.beginPath(); g.arc(hx, hy, R, 0, 7); g.fill();
+    g.save(); g.clip();
+    sombrear(hx, hy, R);
+    g.fillStyle = a.colorPelo;
+    const mechones = (x: number, y: number, rx: number, ry: number, giro = 0) => {      // rayitas que dan textura al pelo
+      g.strokeStyle = oscuro; g.lineWidth = 4;
+      for (const k of [0.45, 0.7]) { g.beginPath(); g.ellipse(x, y, rx * k, ry * k, giro, Math.PI * 0.15, Math.PI * 0.85); g.stroke(); }
+    };
+    if (a.pelo === "lado") { g.beginPath(); g.ellipse(hx - 34, hy - 104, 150, 74, -0.18, 0, 7); g.fill(); g.beginPath(); g.ellipse(hx - R, hy - 30, 34, 74, 0, 0, 7); g.fill(); mechones(hx - 34, hy - 104, 150, 74, -0.18); }
+    if (a.pelo === "corto") { g.beginPath(); g.ellipse(hx, hy - 112, 140, 62, 0, 0, 7); g.fill(); mechones(hx, hy - 112, 140, 62); }
+    if (a.pelo === "mono") { g.beginPath(); g.ellipse(hx, hy - 104, 150, 70, 0, 0, 7); g.fill(); mechones(hx, hy - 104, 150, 70); }
     if (a.pelo === "calvo") { for (const s of [-1, 1]) { g.beginPath(); g.ellipse(hx + s * R, hy - 6, 30, 52, 0, 0, 7); g.fill(); } }
     g.restore();
-    g.beginPath(); g.arc(hx, hy, R, 0, 7); g.stroke();
+    g.strokeStyle = LINEA; g.lineWidth = 10; g.beginPath(); g.arc(hx, hy, R, 0, 7); g.stroke();
 
-    // cara
+    // ---- cara
     const fx = hx + m * 26, ey = hy - 6, sep = 42;
-    g.fillStyle = LINEA; g.lineWidth = 8;
     const c = this.cara;
+    if (c === "feliz" || c === "risa") { g.fillStyle = "rgba(255,120,130,0.38)"; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(fx + s * 74, ey + 44, 20, 12, 0, 0, 7); g.fill(); } }   // chapitas
+    g.fillStyle = LINEA; g.lineWidth = 8;
     for (const s of [-1, 1]) {
       const x = fx + s * sep;
-      if (a.gafas) { g.save(); g.lineWidth = 7; g.fillStyle = "rgba(190,225,255,0.55)"; g.beginPath(); g.arc(x, ey, 33, 0, 7); g.fill(); g.stroke(); g.restore(); }
+      if (a.gafas) { g.save(); g.lineWidth = 7; g.fillStyle = "rgba(190,225,255,0.55)"; g.beginPath(); g.arc(x, ey, 33, 0, 7); g.fill(); g.stroke();
+        g.strokeStyle = "rgba(255,255,255,0.85)"; g.lineWidth = 5; g.beginPath(); g.arc(x, ey, 24, Math.PI * 1.1, Math.PI * 1.4); g.stroke(); g.restore(); }
       g.beginPath();
       if (parpadeo) { g.moveTo(x - 14, ey); g.lineTo(x + 14, ey); g.stroke(); }
       else if (c === "feliz" || c === "risa") { g.arc(x, ey + 8, 16, Math.PI * 1.1, Math.PI * 1.9); g.stroke(); }
-      else if (c === "sorpresa") { g.arc(x, ey, 15, 0, 7); g.fill(); g.fillStyle = "#fff"; g.beginPath(); g.arc(x - 5, ey - 5, 5, 0, 7); g.fill(); g.fillStyle = LINEA; }
-      else { g.arc(x, ey, 10, 0, 7); g.fill(); }
+      else {
+        const rad = c === "sorpresa" ? 15 : 11;
+        g.arc(x + m * 3, ey, rad, 0, 7); g.fill();
+        g.fillStyle = "#fff"; g.beginPath(); g.arc(x + m * 3 - rad * 0.35, ey - rad * 0.35, rad * 0.33, 0, 7); g.fill(); g.fillStyle = LINEA;
+      }
       // cejas
       const cy = ey - (c === "sorpresa" ? 50 : 40) - (a.gafas ? 6 : 0);
       const giro = c === "serio" ? 11 : c === "triste" ? -11 : 0;   // serio: ceja baja por dentro
-      g.beginPath(); g.moveTo(x - s * 18, cy + giro); g.lineTo(x + s * 18, cy - giro); g.stroke();
+      g.lineWidth = 9; g.beginPath(); g.moveTo(x - s * 18, cy + giro); g.lineTo(x + s * 18, cy - giro); g.stroke(); g.lineWidth = 8;
     }
     if (a.gafas) { g.lineWidth = 7; g.beginPath(); g.moveTo(fx - sep + 33, ey); g.lineTo(fx + sep - 33, ey); g.stroke(); }
 
     // boca
     const by = hy + 56;
     g.lineWidth = 8;
-    if (a.bigote) { g.fillStyle = a.colorPelo; g.beginPath(); g.ellipse(fx - 22, by - 16, 28, 13, 0.25, 0, 7); g.ellipse(fx + 22, by - 16, 28, 13, -0.25, 0, 7); g.fill(); g.fillStyle = LINEA; }
+    if (a.bigote) { g.fillStyle = a.colorPelo; g.lineWidth = 5; g.beginPath(); g.ellipse(fx - 22, by - 16, 30, 14, 0.25, 0, 7); g.fill(); g.stroke(); g.beginPath(); g.ellipse(fx + 22, by - 16, 30, 14, -0.25, 0, 7); g.fill(); g.stroke(); g.fillStyle = LINEA; g.lineWidth = 8; }
     g.beginPath();
     if (c === "risa") {
       g.arc(fx, by - 6, 34, 0, Math.PI); g.closePath(); g.fillStyle = "#5a1f22"; g.fill(); g.stroke();
+      g.fillStyle = "#ffffff"; g.fillRect(fx - 22, by - 5, 44, 9);
       g.fillStyle = "#ff8a80"; g.beginPath(); g.ellipse(fx, by + 20, 16, 8, 0, 0, 7); g.fill();
     } else if (c === "sorpresa") { g.ellipse(fx, by + 4, 13, 17 + this.habla * 6, 0, 0, 7); g.fillStyle = "#5a1f22"; g.fill(); g.stroke(); }
     else if (this.habla > 0.12) { g.ellipse(fx, by + 2, 15, 4 + this.habla * 15, 0, 0, 7); g.fillStyle = "#5a1f22"; g.fill(); g.stroke(); }
