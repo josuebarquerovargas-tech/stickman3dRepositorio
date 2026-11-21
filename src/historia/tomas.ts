@@ -193,9 +193,11 @@ function tomaBase(m: Mundo, cam: THREE.PerspectiveCamera, s: number, cuadro: num
     case 1: {
       m.sets.fuera.visible = true; luz("dia");
       const tSteve = P(1, "Steve") - L(1), tReina = P(1, "la") - L(1);
-      const z = lerp(8.5, 2.2, suave2(tramo(t, tSteve - 0.6, tReina + 0.3)));
+      const anda = suave2(tramo(t, tSteve - 0.6, tReina + 0.3)), z = lerp(8.5, 2.2, anda);
       if (t < tSteve - 0.25) camara(suave(tramo(t, 0, tSteve - 0.25)), [3.5, 9, 22], [0, 3.5, -6], [1.5, 3.4, 15], [0, 3.2, -6]);
-      else if (t < tReina) camara(suave(tramo(t, tSteve - 0.25, tReina)), [1.82, 0.5, z + 3.3], [-0.3, 1.3, z], [1.72, 0.55, z + 2.7], [-0.3, 1.38, z]);   // pegada a la cerca: los postes pasan borrosos
+      // La cámara va junto a la cerca pero más lenta que Steve: él se aleja hacia la fábrica (si fuera a su mismo paso, parecería clavado en la pantalla)
+      else if (t < tReina) camara(0, [lerp(1.82, 1.3, anda), lerp(0.5, 0.65, anda), lerp(11.1, 7.0, anda)], [-0.3, lerp(1.3, 1.6, anda), z]);
+
       else { camara(suave(tramo(t, tReina, tReina + 0.5)), [0.5, 1.6, 6.4], [0.6, 3.6, -6], [0.2, 2.6, 4.6], [1.4, 5.7, -6], 38); frente(m.primeros.hojas, -0.7, 0.72, 1.3, 1.2); }
       if (t > tSteve - 0.25) steve.poner(-0.3, z); steve.cara = "feliz"; steve.paso = z > 2.25 ? t * 10 : 0; steve.salto = z > 2.25 ? Math.abs(Math.sin(t * 10)) * 0.05 : 0;
       if (s > P(1, "24")) steve.brazo("d", 2.5 + Math.sin(t * 12) * 0.25, 0.2);       // saluda

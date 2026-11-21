@@ -3,8 +3,10 @@
 Lee   src/historia/tiempos.json
 Crea  public/musica.wav   (música + efectos, del mismo largo que la voz)
 
-Uso:  python3 scripts/musica.py
+Uso:  python3 scripts/musica.py                (solo efectos de sonido)
+      python3 scripts/musica.py --con-musica   (efectos + música de fondo)
 """
+import sys
 import json, os, wave
 import numpy as np
 
@@ -50,9 +52,10 @@ TRISTE = [[57, 60, 64, 69], [53, 57, 60, 65], [50, 53, 57, 62], [52, 56, 59, 64]
 def animo(t):                            # la música se pone seria cuando la historia se pone seria
     return TRISTE if (L(7) <= t < L(10)) or t >= L(11) else ALEGRE
 
+CON_MUSICA = "--con-musica" in sys.argv      # por defecto el corto va sin música de fondo: solo voz y efectos
 i = 0
 t = 0.0
-while t < DUR:
+while CON_MUSICA and t < DUR:
     acordes = animo(t)
     acorde = acordes[(i // 8) % 4]
     serio = acordes is TRISTE
@@ -118,4 +121,5 @@ pista = np.tanh(pista * 1.4) * 0.8
 with wave.open(os.path.join(RAIZ, "public/musica.wav"), "wb") as w:
     w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR)
     w.writeframes((pista * 32767).astype(np.int16).tobytes())
-print(f"Listo: {DUR:.1f} s -> public/musica.wav")
+print(f"Listo: {DUR:.1f} s -> public/musica.wav ({'música + efectos' if CON_MUSICA else 'solo efectos'})")
+
