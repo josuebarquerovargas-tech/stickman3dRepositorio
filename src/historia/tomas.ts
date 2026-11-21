@@ -26,6 +26,32 @@ export const fraseEn = (s: number) => { let n = 0; tiempos.lineas.forEach((l, i)
 type V3 = [number, number, number];
 const v = (a: V3) => new THREE.Vector3(...a);
 
+// LA LUZ CUENTA EL PASO DEL TIEMPO: mañana dorada -> tarde -> anochecer -> noche -> amanecer rosa -> ocaso apagado.
+// En las escenas oscuras el ambiente es azul violeta y las lámparas dejan charcos de luz cálida.
+interface Luz {
+  amb: number; ambColor: number;            // luz general y su color
+  sol: number; solColor: number; solPos: V3;   // luz principal (sol o luna) y de dónde viene
+  cielo: "dia" | "gris" | "noche" | "amanecer" | "ocaso";
+  pj: number;                               // tinte de los personajes (son dibujos planos: no reciben luz)
+  niebla: number; tinte: V3; sat: number; brillo: number;
+  techo: number; mesa: number; farol: number;   // fuerza de las lámparas de techo, de escritorio y de los faroles
+  ventana: number;                          // color de la ventana del laboratorio
+}
+const LUCES = {
+  dia:       { amb: 1.3,  ambColor: 0xffffff, sol: 2.6,  solColor: 0xffe2b4, solPos: [-9, 7.5, 7],  cielo: "dia",      pj: 0xffffff, niebla: 0xd8ecff, tinte: [1.05, 1.0, 0.94],  sat: 1.2,  brillo: 0.7,  techo: 1,    mesa: 1,   farol: 0,  ventana: 0xa8e0ff },
+  interior:  { amb: 0.78, ambColor: 0xffffff, sol: 1.05, solColor: 0xffe9c8, solPos: [-6, 11, 8],   cielo: "dia",      pj: 0xfff4e6, niebla: 0xcfeaff, tinte: [1.03, 1.0, 0.95],  sat: 1.12, brillo: 0.8,  techo: 1,    mesa: 1,   farol: 0,  ventana: 0xa8e0ff },
+  tarde:     { amb: 0.55, ambColor: 0xffdcc0, sol: 0.95, solColor: 0xff9a58, solPos: [-10, 5, 6],   cielo: "dia",      pj: 0xffe8d0, niebla: 0xffd9b8, tinte: [1.07, 0.98, 0.88], sat: 1.16, brillo: 0.95, techo: 1.2,  mesa: 1.5, farol: 0,  ventana: 0xffb06a },
+  anochecer: { amb: 0.34, ambColor: 0x8f8cff, sol: 0.28, solColor: 0x7f7cf0, solPos: [-6, 11, 8],   cielo: "noche",    pj: 0xd9d2f2, niebla: 0x2a2f7a, tinte: [0.98, 0.95, 1.07], sat: 1.16, brillo: 1.2,  techo: 0.55, mesa: 2.4, farol: 1,  ventana: 0x4a4fb4 },
+  sala:      { amb: 0.46, ambColor: 0xc8b4ff, sol: 0.4,  solColor: 0xffd0a0, solPos: [-6, 11, 8],   cielo: "noche",    pj: 0xfff0dc, niebla: 0x2a2f7a, tinte: [1.04, 0.98, 0.93], sat: 1.14, brillo: 1.0,  techo: 0.8,  mesa: 1,   farol: 1,  ventana: 0x4a4fb4 },
+
+  drama:     { amb: 0.3,  ambColor: 0x8f8cff, sol: 0.5,  solColor: 0x9a8cff, solPos: [-6, 11, 8],   cielo: "noche",    pj: 0xcbc4ea, niebla: 0x2a2f7a, tinte: [0.92, 0.92, 1.12], sat: 1.1,  brillo: 1.25, techo: 0.3,  mesa: 2.4, farol: 1,  ventana: 0x2a2f7a },
+  noche:     { amb: 0.5,  ambColor: 0xb0b8ff, sol: 0.85, solColor: 0x8f9cff, solPos: [-6, 11, 8],   cielo: "noche",    pj: 0xdfdff6, niebla: 0x2a2f7a, tinte: [0.95, 0.95, 1.1],  sat: 1.25, brillo: 1.3,  techo: 1,    mesa: 1,   farol: 1,  ventana: 0x2a2f7a },
+  amanecer:  { amb: 0.95, ambColor: 0xffe0f0, sol: 1.9,  solColor: 0xffa890, solPos: [10, 4.5, 7],  cielo: "amanecer", pj: 0xfff0ee, niebla: 0xf5c8d0, tinte: [1.05, 0.97, 1.0],  sat: 1.2,  brillo: 0.95, techo: 1,    mesa: 1,   farol: 0.45, ventana: 0xffc0c8 },
+  ocaso:     { amb: 0.72, ambColor: 0xe6d6ea, sol: 0.9,  solColor: 0xff9a78, solPos: [9, 3.6, 6],   cielo: "ocaso",    pj: 0xd9d0d6, niebla: 0xb9a6ae, tinte: [1.0, 0.97, 1.03],  sat: 0.8,  brillo: 0.75, techo: 1,    mesa: 1,   farol: 0.9, ventana: 0xffb06a },
+} satisfies Record<string, Luz>;
+type TipoLuz = keyof typeof LUCES;
+const mezclaColor = (a: number, b: number, k: number) => new THREE.Color(a).lerp(new THREE.Color(b), k);
+
 export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, cuadro: number) {
   const { steve, jefe, jefe2, jefe3, ayudante } = m.actores;
   m.reiniciar();
@@ -53,25 +79,35 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
     const [p0, p1] = anclas.map((a) => { const h = d * Math.tan((a.fov * Math.PI) / 360); return new THREE.Vector3(fx * h * 9 / 16, fy * h, -d).applyQuaternion(a.q).add(a.p); });
     o.visible = true; o.position.lerpVectors(p0, p1, k); o.scale.setScalar(escala); o.rotation.y = giro; return o;
   };
-  /** Ambiente de luz, niebla y color de cada tipo de escena. */
-  const luz = (tipo: "dia" | "interior" | "drama" | "noche" | "gris") => {
-    const t = {
-      //         ambiente, sol, color del sol, cielo, tinte personajes, niebla, [color final], saturación, brillo
-      dia:      [1.35, 2.6, 0xfff0d0, "dia",   0xffffff, 0xcfeaff, [1.03, 1.0, 0.96], 1.2, 0.7],
-      interior: [0.78, 1.05, 0xffe9c8, "dia",   0xfff4e6, 0xcfeaff, [1.03, 1.0, 0.95], 1.12, 0.8],
-      drama:    [0.42, 0.75, 0x9a8cff, "noche", 0xcbc4ea, 0x2a2f7a, [0.92, 0.92, 1.12], 1.1, 1.2],
-      noche:    [0.55, 0.9, 0x8f9cff, "noche", 0xdfdff6, 0x2a2f7a, [0.95, 0.95, 1.1], 1.25, 1.3],
-      gris:     [1.0, 0.8, 0xcfd6e6, "gris",  0xd2d5dc, 0xb7b9bd, [0.97, 0.99, 1.04], 0.72, 0.5],
-    }[tipo] as [number, number, number, "dia" | "gris" | "noche", number, number, [number, number, number], number, number];
-    m.ambiente.intensity = t[0]; m.sol.intensity = t[1]; m.sol.color.set(t[2]);
-    (m.boveda.material as THREE.MeshBasicMaterial).map = m.cielos[t[3]];
-    m.todos.forEach((p) => p.tinte(t[4]));
-    (m.escena.fog as THREE.Fog).color.set(t[5]);
-    m.look.tinte = t[6]; m.look.saturacion = t[7]; m.look.brillo = t[8];
-    m.lucesNoche.visible = t[3] === "noche";
-    const apagado = tipo === "drama" ? 0.35 : 1;
-    m.luzLab.intensity = 11 * apagado; m.luzSala.intensity = 12 * apagado; m.luzMesa.intensity = 7;
+  /** Ambiente de luz de la escena. Con dos tipos y `k` (0..1) pasa poco a poco de uno a otro: así avanza el día. */
+  const luz = (tipoA: TipoLuz, tipoB: TipoLuz = tipoA, k = 0) => {
+    const a: Luz = LUCES[tipoA], b: Luz = LUCES[tipoB], n = (x: number, y: number) => lerp(x, y, k);
+    m.ambiente.intensity = n(a.amb, b.amb); m.ambiente.color.copy(mezclaColor(a.ambColor, b.ambColor, k));
+    m.sol.intensity = n(a.sol, b.sol); m.sol.color.copy(mezclaColor(a.solColor, b.solColor, k));
+    m.sol.position.lerpVectors(v(a.solPos), v(b.solPos), k);
+    const cielo = k < 0.5 ? a.cielo : b.cielo;
+    (m.boveda.material as THREE.MeshBasicMaterial).map = m.cielos[cielo];
+    const pj = mezclaColor(a.pj, b.pj, k); m.todos.forEach((p) => p.tinte(pj));
+    (m.escena.fog as THREE.Fog).color.copy(mezclaColor(a.niebla, b.niebla, k));
+    m.look.tinte = [n(a.tinte[0], b.tinte[0]), n(a.tinte[1], b.tinte[1]), n(a.tinte[2], b.tinte[2])];
+    m.look.saturacion = n(a.sat, b.sat); m.look.brillo = n(a.brillo, b.brillo);
+    m.lucesNoche.visible = cielo === "noche";
+    // lámparas: cuanto más oscuro el ambiente, más mandan sus charcos de luz cálida
+    const techo = n(a.techo, b.techo), mesa = n(a.mesa, b.mesa), farol = n(a.farol, b.farol);
+    m.luzLab.intensity = 11 * techo; m.luzSala.intensity = 12 * techo; m.luzMesa.intensity = 7 * mesa;
+    m.apliques.forEach((l) => (l.intensity = 7 * techo)); m.faroles.forEach((l) => (l.intensity = 16 * farol));
+    m.luzNoche.intensity = 5;
+    const oscuro = 1 - c01((n(a.amb, b.amb) - 0.3) / 0.7);          // los conos de luz se notan más a oscuras
+    m.haces.forEach((h) => ((h.material as THREE.MeshBasicMaterial).opacity = h.userData.fuerza * (0.3 + oscuro * 0.9)));
+    (m.ventanaLab.material as THREE.MeshBasicMaterial).color.copy(mezclaColor(a.ventana, b.ventana, k)).multiplyScalar(1.5);
     m.foquitos.forEach((f, i) => (f.visible = Math.sin(s * (3 + (i % 5)) + i * 1.7) > -0.3));   // foquitos que parpadean
+  };
+  /** Vapor o humo que sube desde un punto (una taza, un cautín): bolitas blancas que se desvanecen. */
+  const vapor = (x: number, y: number, z: number, desde = 0, cuantos = 3, alto = 0.5) => {
+    for (let i = 0; i < cuantos; i++) {
+      const f = (s * 0.45 + i / cuantos) % 1, p = m.vapores[desde + i];
+      ver(p, x + Math.sin(f * 6 + i * 2) * 0.04, y + f * alto, z, 0.1 + f * 0.16); p.material.opacity = 0.45 * Math.sin(f * Math.PI);
+    }
   };
   const ver = (o: THREE.Object3D, x: number, y: number, z: number, escala = 1) => { o.visible = true; o.position.set(x, y, z); o.scale.setScalar(escala); return o; };
   const hablar = (p: Personaje, desde: number, hasta: number) => { if (s > desde && s < hasta) p.habla = Math.abs(Math.sin(s * 13)) * 0.9; };
@@ -141,6 +177,7 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
     // 2 — "Su jefe le pasa un sensor nuevo y le dice: a ver qué haces con esto."
     case 2: {
       m.sets.lab.visible = true; luz("interior");
+      vapor(1.5, 1.1, -1.0, 0, 3, 0.45);
       const cerca = suave(tramo(s, P(2, "dice") - 0.1, P(2, "dice") + 0.35));
       camara(cerca, [2.0 - u * 0.2, 0.75, 4.1 - u * 0.3], [0.05, 1.32, 0.3], [1.55, 0.8, 3.2], [0.2, 1.38, 0.3], 46);
       frente(m.primeros.rollos, 0.72, -1.0, 1.25, 0.7, 0.4, lerp(0.3, 1, cerca));
@@ -164,7 +201,7 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
     }
     // 3 — "Steve arma un aparato del tamaño de una tostadora. Pesa casi 4 kilos, usa 16 pilas y guarda las fotos en un casete."
     case 3: {
-      m.sets.lab.visible = true; luz("interior");
+      m.sets.lab.visible = true; luz("interior", "tarde", suave2(u));   // se le va la tarde armándolo
       const tA = P(3, "aparato"), tT = P(3, "tostadora"), tP = P(3, "Pesa"), tK = P(3, "4"), tU = P(3, "usa"), tPi = P(3, "16"), tC = P(3, "casete");
       // la cámara aparece por partes
       const sube = suave2(tramo(s, tP, tK + 0.2)) * (1 - suave2(tramo(s, tU - 0.35, tU)));
@@ -207,7 +244,7 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
     }
     // 4 — "Toma su primera foto. Tarda 23 segundos en grabarse."
     case 4: {
-      m.sets.lab.visible = true; luz("interior");
+      m.sets.lab.visible = true; luz("tarde", "anochecer", suave2(u));   // y mientras espera, anochece
       camara(suave2(tramo(s, P(4, "Tarda") - 0.2, tiempos.lineas[4].fin)), [-1.9, 0.8, 4.3], [0, 1.35, 0.4], [-1.25, 0.9, 3.0], [0.45, 1.5, 0.4], 48, 46);
       frente(m.primeros.libros, 0.8, -1.05, 1.3, 0.8, -0.6, 0.15);
       steve.poner(-0.85, 0.4); steve.mira = 1; ayudante.poner(0.85, 0.4); ayudante.mira = -1;
@@ -232,7 +269,8 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
     }
     // 5 — "Y sale en blanco y negro, en un televisor, con apenas 100 por 100 puntitos."
     case 5: {
-      m.sets.lab.visible = true; luz("interior");
+      m.sets.lab.visible = true; luz("anochecer");
+      m.luzTele.intensity = 9 * tramo(t, 0.15, 1.3);            // la pantalla le alumbra la cara
       const z = suave2(tramo(s, P(5, "con"), P(5, "100") + 0.6));
       camara(z, [1.0 - u * 0.3, 0.7, 2.9 - u * 0.3], [-0.4, 1.25, 0.2], [-0.12, 1.22, 2.0], [-0.12, 1.2, 0.4], 42);
       if (z < 0.5) frente(m.primeros.rollos, -0.78, -1.0, 1.3, 0.7, -0.3, 0);
@@ -247,7 +285,8 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
     }
     // 6 — "Se la muestra a los jefes. Ellos se ríen: ¿quién va a querer ver sus fotos en una tele?"
     case 6: {
-      m.sets.sala.visible = true; luz("interior"); m.pantalla(1);
+      m.sets.sala.visible = true; luz("sala"); m.pantalla(1); m.luzTele.intensity = 7;
+      vapor(-0.3, 1.22, -0.8, 0, 3, 0.4); vapor(0.7, 1.22, -0.8, 3, 3, 0.4);
       const tR = P(6, "Ellos"), tQ = P(6, "quién"), tV = P(6, "fotos");
       if (s < tR - 0.1) { camara(suave(u * 2.5), [-2.1, 0.8, 4.0], [0.15, 1.4, -0.6], [-1.8, 0.85, 3.5], [0.15, 1.4, -0.6], 48); frente(m.primeros.silla, 0.7, -1.45, 1.1, 1, 0.5); }
       else if (s < tV) camara(tramo(s, tR, tV), [1.9, 1.15, 0.5], [-0.1, 1.72, -2.1], [1.7, 1.15, 0.2], [-0.1, 1.72, -2.1], 52);   // en diagonal, al ras de la mesa
@@ -276,7 +315,8 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
     case 7: {
       m.sets.sala.visible = true;
       const tL = P(7, "qué"), tN = P(7, "pero");
-      luz(s > tN ? "drama" : "interior");
+      luz("sala", "drama", suave(tramo(s, tN - 0.1, tN + 0.35)));
+      vapor(-0.3, 1.22, -0.8, 0, 3, 0.4);
       camara(suave2(u), [0.5, 1.22, 1.0], [0, 1.72, -2.1], [0.2, 1.27, -0.05], [0, 1.72, -2.1], 38);
       // ACCIÓN: aplaude con desgana; luego se echa hacia adelante sobre la mesa y pide silencio con el dedo
       const encima = suave2(tramo(s, tN - 0.1, tN + 0.4));
@@ -351,7 +391,7 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
     }
     // 10 — "Años después, el mundo entero se pasó a lo digital."
     case 10: {
-      m.sets.calle.visible = true; luz("dia");
+      m.sets.calle.visible = true; luz("amanecer", "dia", suave2(u) * 0.55);   // un día nuevo: amanece rosa
       camara(suave2(u), [-3.3, 0.85, 2.7], [0.1, 1.6, 0.1], [-2.7, 0.95, 3.1], [0.3, 1.6, 0.1], 48);
       frente(m.primeros.hidrante, 0.66, -1.5, 1.0, 1, 0.3);
       m.gente.forEach((p, i) => {
@@ -370,7 +410,8 @@ export function aplicarToma(m: Mundo, cam: THREE.PerspectiveCamera, s: number, c
     // 11 — "Y en 2012, Kodak se declaró en bancarrota."   12 — "La empresa que inventó el futuro… quebró por no usarlo."
     case 11:
     case 12: {
-      m.sets.fuera.visible = true; luz("gris");
+      m.sets.fuera.visible = true; luz("ocaso");
+
       m.cerrado.visible = true; m.corona.visible = false;
       const tB = P(11, "bancarrota");
       const cae = tramo(s, tB, tB + 0.35), ladea = suave(tramo(s, P(11, "Kodak"), P(11, "Kodak") + 0.3));

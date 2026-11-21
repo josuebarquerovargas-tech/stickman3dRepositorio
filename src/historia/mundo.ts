@@ -48,9 +48,40 @@ function piedras(n: number, ancho: number, fondo: number, padre: THREE.Object3D,
   const r = dado(semilla);
   for (let i = 0; i < n; i++) { const p = en(roca(0.07 + r() * 0.1, color, 0.02), (r() - 0.5) * ancho, 0.04, (r() - 0.5) * fondo, padre); p.rotation.set(r() * 3, r() * 3, 0); p.scale.y = 0.6; }
 }
+/** Conos de luz que se ven en el aire bajo cada lámpara (se llenan en crearMundo). */
+const haces: THREE.Mesh[] = [];
+/** Cono de luz translúcido: la punta queda en (0, 0, 0) del padre y se abre hacia abajo. */
+function haz(radio: number, alto: number, color: number, fuerza: number, padre: THREE.Object3D) {
+  const m = new THREE.Mesh(new THREE.ConeGeometry(radio, alto, 28, 1, true),
+    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: fuerza, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+  m.position.y = -alto / 2; m.userData.fuerza = fuerza; padre.add(m); haces.push(m);
+  return m;
+}
+/** Farol de calle: poste, foco que brilla, cono de luz y la luz misma. */
+function farol(x: number, z: number, padre: THREE.Object3D, alto = 3.5, color = 0xffc98a) {
+  const g = en(new THREE.Group(), x, 0, z, padre);
+  en(cilindro(0.06, 0.09, alto, 0x2b2b33, 0.02, 8), 0, alto / 2, 0, g);
+  en(cilindro(0.16, 0.2, 0.1, 0x2b2b33, 0.02, 10), 0, 0.05, 0, g);
+  en(cono(0.34, 0.24, 0x2b2b33, 0.025, 12), 0, alto + 0.2, 0, g);
+  en(new THREE.Mesh(new THREE.SphereGeometry(0.17, 12, 8), luminoso(color, 3.2)), 0, alto, 0, g);
+  const l = new THREE.PointLight(color, 0, 11, 1.5); l.position.set(0, alto - 0.2, 0.3); g.add(l);
+  haz(1.4, alto, color, 0.06, en(new THREE.Group(), 0, alto, 0, g));
+  return l;
+}
+/** Aplique de pared con su luz. */
+function aplique(x: number, y: number, z: number, padre: THREE.Object3D, color = 0xffc080) {
+  const g = en(new THREE.Group(), x, y, z, padre);
+  en(caja(0.16, 0.3, 0.1, 0x7a5a2a, 0.02), 0, -0.1, 0, g);
+  en(cono(0.2, 0.26, 0xfff0c8, 0.02, 12), 0, 0.12, 0.14, g);
+  en(new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), luminoso(color, 4)), 0, 0.02, 0.14, g);
+  const l = new THREE.PointLight(color, 0, 6, 1.6); l.position.set(0, 0, 0.5); g.add(l);
+  haz(0.8, 1.6, color, 0.05, en(new THREE.Group(), 0, 0.05, 0.14, g));
+  return l;
+}
 /** Lámpara colgante con foco que brilla y su luz. */
 function lamparaTecho(x: number, y: number, z: number, padre: THREE.Object3D, color = 0xffd9a0, fuerza = 30) {
   const g = en(new THREE.Group(), x, y, z, padre);
+  haz(1.9, y - 0.1, color, 0.028, g);
   en(cilindro(0.02, 0.02, 3, 0x2b2b33, 0), 0, 1.7, 0, g);
   en(cono(0.42, 0.34, 0x3f8f7a, 0.03, 16), 0, 0.12, 0, g);
   en(new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 8), luminoso(color, 4)), 0, -0.08, 0, g);
@@ -79,6 +110,7 @@ function letrero(tam: number) {
 }
 
 export function crearMundo() {
+  haces.length = 0;
   const escena = new THREE.Scene();
   escena.fog = new THREE.Fog(0xbfe3ff, 30, 110);
 
@@ -96,6 +128,8 @@ export function crearMundo() {
     dia: cielo(["#2f7fe0", "#58a8f0", "#a8dcff", "#f4fbff"]),
     gris: cielo(["#4d5562", "#7f8794", "#b7b9bd", "#d9d2c8"]),
     noche: cielo(["#070a2e", "#151a5a", "#3a2f86", "#8a4f9a"]),
+    amanecer: cielo(["#3b4aa8", "#8f6fc4", "#f08fb0", "#ffd7a0"]),
+    ocaso: cielo(["#3b3f5c", "#6c5f86", "#b98a92", "#f0b48a"]),
   };
   const boveda = new THREE.Mesh(new THREE.SphereGeometry(90, 24, 16),
     new THREE.MeshBasicMaterial({ map: cielos.dia, side: THREE.BackSide, fog: false }));
@@ -110,7 +144,7 @@ export function crearMundo() {
   en(caja(18, 0.1, 0.42, 0x5a3a22, 0.02), 0, 1.27, -3.36, lab);
   // ventana con luz de día
   en(caja(2.5, 2.1, 0.14, 0xfff3d6, 0.04), -2.6, 3.6, -3.22, lab);
-  en(new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.8), luminoso(0x9fdcff, 1.5)), -2.6, 3.6, -3.14, lab);
+  const ventanaLab = en(new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.8), luminoso(0x9fdcff, 1.5)), -2.6, 3.6, -3.14, lab);
   en(caja(0.09, 1.8, 0.18, 0xfff3d6, 0.02), -2.6, 3.6, -3.14, lab);
   en(caja(2.2, 0.09, 0.18, 0xfff3d6, 0.02), -2.6, 3.6, -3.14, lab);
   en(caja(2.7, 0.12, 0.4, 0xfff3d6, 0.03), -2.6, 2.5, -3.1, lab);
@@ -142,6 +176,8 @@ export function crearMundo() {
   en(cono(0.26, 0.3, 0xf2b441, 0.03), 1.4, 1.95, -0.3, mesa);
   en(new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), luminoso(0xffe0a0, 4)), 1.4, 1.82, -0.3, mesa);
   const luzMesa = new THREE.PointLight(0xffc98a, 14, 7, 1.7); luzMesa.position.set(1.3, 1.8, 0.1); mesa.add(luzMesa);
+  haz(0.75, 0.8, 0xffc98a, 0.1, en(new THREE.Group(), 1.4, 1.86, -0.3, mesa));
+
   const rollito = en(new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.025, 6, 16), material(0xd9482f)), 0.95, 1.1, 0.25, mesa); rollito.rotation.x = Math.PI / 2;   // cable enrollado
   en(caja(0.3, 0.02, 0.4, 0xfff8ef, 0.012), -0.5, 1.08, 0.3, mesa).rotation.y = 0.3;                    // planos
   // computadora de los 70 con carretes de cinta
@@ -181,6 +217,7 @@ export function crearMundo() {
   }
   en(cilindro(0.1, 0.16, 0.34, 0xffd23f, 0.025, 12), 2.2, 1.25, -1.5, sala);                             // trofeo
   const luzSala = lamparaTecho(0, 5.4, 0.2, sala, 0xffe0b0, 30);
+  const apliques = [-1.75, 1.75].map((x) => aplique(x, 3.0, -3.2, sala));
 
   // ------------------------------------------------------------------ EXTERIOR: la fábrica
   const fuera = grupo(escena);
@@ -202,6 +239,7 @@ export function crearMundo() {
   en(new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), material(0xffd23f)), 0.55, 1.1, 2.12, fabrica);
   en(caja(2.2, 0.12, 0.8, 0xe2574c, 0.03), 0, 2.36, 2.3, fabrica).rotation.x = 0.25;                     // toldo
   for (const x of [-2.9, -1.9]) { en(cilindro(0.3, 0.38, 2.4, 0xa9523e, 0.05, 14, { trama: "ladrillo", rx: 2, ry: 2 }), x, 5.7, -0.8, fabrica); en(cilindro(0.36, 0.36, 0.16, 0x7a352b, 0.03, 14), x, 6.9, -0.8, fabrica); }
+  const farolFuera = farol(1.65, -1.3, fuera, 3.3);
   const letreroFabrica = en(new THREE.Group(), 0, 3.0, -3.9, fuera);
   letreroFabrica.add(caja(4.6, 0.95, 0.12, 0x2b2b33));
   en(cartel("FÁBRICA DE ROLLOS", 4.4, 0.78, "#f6c32c", "#2b1a12", 0.56), 0, 0, 0.08, letreroFabrica);
@@ -244,10 +282,7 @@ export function crearMundo() {
     const t = en(caja(3.0, 0.14, 0.9, [0xe2574c, 0x3fae8a, 0x5d7bd6, 0xf2b441][i % 4], 0.03), 0, 2.45 - (h as number) / 2, 1.9, e); t.rotation.x = 0.3;   // toldo
     if (i < 4) en(cartel(tiendas[i], 2.2, 0.5, "#2b2b33", "#fff8ef", 0.62), 0, 2.95 - (h as number) / 2, 1.56, e);
   });
-  for (const x of [-3.6, 3.7]) {                                                                           // faroles
-    en(cilindro(0.06, 0.08, 3.6, 0x2b2b33, 0.02, 8), x, 1.8, -2.4, calle);
-    en(new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 8), luminoso(0xfff0c0, 2.2)), x, 3.7, -2.4, calle);
-  }
+  const farolesCalle = [-3.6, 3.7].map((x) => farol(x, -2.4, calle, 3.6, 0xffd9a0));
   arbol(-6.6, -2.6, calle, 0.9, 0x54b35c); arbol(6.9, -2.6, calle, 0.8, 0x4aa855);
   en(cilindro(0.14, 0.16, 0.6, 0xe2382c, 0.03, 10), -1.7, 0.4, -2.2, calle);                                // hidrante
   for (const [x, y, z, t] of [[-8, 16, -30, 9], [9, 20, -36, 11]]) { const n = pegatinaNube("#ffffff", t); n.position.set(x, y, z); (n.material as THREE.SpriteMaterial).fog = false; calle.add(n); }
@@ -270,6 +305,8 @@ export function crearMundo() {
   const pedestal = en(caja(0.9, 0.8, 0.7, 0x5a4a9a, 0.035, { trama: "liso" }), -0.3, 0.4, 0.4, noche);
   const cuernos = [-1, 1].map((s) => { const c = cono(0.1, 0.34, 0xe2382c, 0.03, 10); (c.material as THREE.MeshToonMaterial).emissive.set(0x8a1010); c.rotation.z = -s * 0.5; noche.add(c); return c; });
   const luzNoche = new THREE.PointLight(0xffc98a, 9, 12, 1.4); luzNoche.position.set(0.3, 3.6, 3.0); noche.add(luzNoche);
+  const farolNoche = farol(-0.15, -1.9, noche, 3.6);
+  const faroles = [farolFuera, ...farolesCalle, farolNoche];
 
   // ------------------------------------------------------------------ OBJETOS que se mueven
   const cosas = grupo(escena);
@@ -317,6 +354,7 @@ export function crearMundo() {
   en(caja(0.9, 0.78, 0.02, 0x22252b, 0.02), -0.12, 1.2, 0.42, tele);
   for (const y of [1.42, 1.2]) { const p = cilindro(0.06, 0.06, 0.05, 0xd9d2c4, 0.015, 12); p.rotation.x = Math.PI / 2; en(p, 0.5, y, 0.44, tele); }
   for (const s of [-1, 1]) { const a = cilindro(0.015, 0.015, 0.8, 0xc7ccd4, 0.01, 6); a.rotation.z = -s * 0.5; en(a, s * 0.2, 2.05, 0, tele); }
+  const luzTele = new THREE.PointLight(0xbfd0ff, 0, 5, 1.5); luzTele.position.set(-0.12, 1.25, 1.0); tele.add(luzTele);   // la pantalla alumbra
   let filasPant = -1;
   const pantalla = (u: number) => {            // u = cuánto de la foto ya apareció (0..1)
     const filas = Math.round(u * 40);
@@ -385,6 +423,7 @@ export function crearMundo() {
   const risas = Array.from({ length: 5 }, () => { const r = pegatinaTexto("JA", "#ffe14d", 0.7); fx.add(r); return r; });
   const polvos = Array.from({ length: 5 }, () => { const p = pegatinaNube("#e8e2d8", 1); fx.add(p); return p; });
   const kilos = pegatinaTexto("4 kg", "#ffffff", 0.9); fx.add(kilos);
+  const vapores = Array.from({ length: 6 }, () => { const p = pegatinaNube("#ffffff", 0.3); fx.add(p); return p; });
   const contador = letrero(0.7); fx.add(contador.sprite);
 
   // ------------------------------------------------------------------ actores
@@ -403,7 +442,7 @@ export function crearMundo() {
 
   const sets = { lab, sala, fuera, calle, noche };
   const movibles: THREE.Object3D[] = [camara, chip, casete, tostadora, ...pilas, tele, archivero, candado, secreto, ...telefonos,
-    ...destellos, ...risas, ...polvos, kilos, contador.sprite, ...humos, ...monedas, ...cuernos, ...Object.values(primeros), martillo, maletin];
+    ...destellos, ...risas, ...polvos, kilos, contador.sprite, ...humos, ...monedas, ...cuernos, ...Object.values(primeros), martillo, maletin, ...vapores];
 
   /** Deja todo escondido y en su estado inicial. Se llama al empezar cada cuadro. */
   const reiniciar = () => {
@@ -418,7 +457,7 @@ export function crearMundo() {
     corona.position.set(1.6, 6.62, -6); corona.rotation.set(0, 0, 0); corona.visible = true;
     rolloGigante.rotation.set(0, 0, 0);
     cerrado.visible = false; pedestal.visible = false;
-    foco.intensity = 0;
+    foco.intensity = 0; luzTele.intensity = 0;
     todos.forEach((p) => p.reiniciar());
   };
 
@@ -426,7 +465,9 @@ export function crearMundo() {
   return { look, lucesNoche, luzLab, luzSala, luzMesa, foquitos, escena, ambiente, sol, foco, boveda, cielos, sets, actores, gente, todos, reiniciar, pantalla,
     camara, camPlacas, camLente, camCuerpo, chip, casete, tostadora, panes, pilas, tele, archivero, cajon, candado, secreto, telefonos,
     letreroFabrica, cerrado, rolloGigante, corona, humos, monedas, pedestal, cuernos, pila,
-    destellos, risas, polvos, kilos, contador, primeros, martillo, maletin };
+    destellos, risas, polvos, kilos, contador, primeros, martillo, maletin,
+    haces, faroles, apliques, ventanaLab, luzTele, vapores, luzNoche };
+
 
 }
 export type Mundo = ReturnType<typeof crearMundo>;
