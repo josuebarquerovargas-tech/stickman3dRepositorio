@@ -267,7 +267,8 @@ function tomaBase(m: Mundo, cam: THREE.PerspectiveCamera, s: number, cuadro: num
       const tost = rebote(tramo(s, tT, tT + 0.3)) * (1 - suave(tramo(s, tP - 0.3, tP)));
       if (tost > 0.01) { ver(m.tostadora, 0.62, 1.07, -1.2, tost); m.tostadora.rotation.y = -0.2; m.panes.forEach((p) => (p.position.y = 0.3 + Math.abs(Math.sin(c01((s - tT - 0.35) * 2.2) * Math.PI)) * 0.3)); }
       if (s > tT && s < tP) steve.brazo("d", 1.5, 0.2);
-      if (sube > 0.3) ver(m.kilos, -0.3, 2.55, -1.1, 0.9 * rebote(tramo(s, tK, tK + 0.25)));
+      if (sube > 0.3) ver(m.kilos, 0.12, 2.5, -1.1, 0.55 * rebote(tramo(s, tK, tK + 0.25)));
+
 
       // 16 pilas en fila
       m.pilas.forEach((p, i) => { const k = rebote(tramo(s, tPi + i * 0.045, tPi + i * 0.045 + 0.2)); if (k > 0) ver(p, -0.86 + i * 0.115, 1.135, -0.76, k); });
