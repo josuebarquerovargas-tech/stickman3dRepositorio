@@ -8,6 +8,9 @@
     "musica": "python3 scripts/musica.py",
     "estudio": "remotion studio src/index.ts",
     "foto": "node scripts/fotos.mjs",
+    "miniatura": "remotion still src/index.ts Miniatura out/miniatura.png --frame=44 --gl=angle"
+,
+
     "video": "remotion render src/index.ts Short out/video.mp4 --crf 18",
     "video:servidor": "remotion render src/index.ts Short out/video.mp4 --crf 18 --gl=swangle",
     "video:gpu": "remotion render src/index.ts Short out/video.mp4 --crf 18 --gl=angle"
